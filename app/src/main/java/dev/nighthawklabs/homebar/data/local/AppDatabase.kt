@@ -5,15 +5,24 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import dev.nighthawklabs.homebar.data.local.dao.IngredientDao
 import dev.nighthawklabs.homebar.data.local.dao.RecipeDao
+import dev.nighthawklabs.homebar.data.local.dao.SubstitutionGroupDao
 import dev.nighthawklabs.homebar.data.local.entity.IngredientEntity
 import dev.nighthawklabs.homebar.data.local.entity.RecipeEntity
 import dev.nighthawklabs.homebar.data.local.entity.RecipeIngredientEntity
+import dev.nighthawklabs.homebar.data.local.entity.SubstitutionGroupEntity
+import dev.nighthawklabs.homebar.data.local.entity.SubstitutionGroupIngredientCrossRef
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [IngredientEntity::class, RecipeEntity::class, RecipeIngredientEntity::class],
-    version = 2,
+    entities = [
+        IngredientEntity::class,
+        RecipeEntity::class,
+        RecipeIngredientEntity::class,
+        SubstitutionGroupEntity::class,
+        SubstitutionGroupIngredientCrossRef::class,
+    ],
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(IngredientConverters::class, RecipeConverters::class)
@@ -21,6 +30,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun ingredientDao(): IngredientDao
 
     abstract fun recipeDao(): RecipeDao
+
+    abstract fun substitutionGroupDao(): SubstitutionGroupDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -49,6 +60,28 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_recipe_ingredients_ingredientId` " +
                         "ON `recipe_ingredients` (`ingredientId`)",
+                )
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `substitution_groups` (" +
+                        "`id` TEXT NOT NULL, `name` TEXT NOT NULL, PRIMARY KEY(`id`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `substitution_group_ingredients` (" +
+                        "`groupId` TEXT NOT NULL, `ingredientId` TEXT NOT NULL, " +
+                        "PRIMARY KEY(`groupId`, `ingredientId`), " +
+                        "FOREIGN KEY(`groupId`) REFERENCES `substitution_groups`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                        "FOREIGN KEY(`ingredientId`) REFERENCES `ingredients`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE NO ACTION)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_substitution_group_ingredients_ingredientId` " +
+                        "ON `substitution_group_ingredients` (`ingredientId`)",
                 )
             }
         }

@@ -7,8 +7,11 @@ import dev.nighthawklabs.homebar.data.repository.IngredientRepository
 import dev.nighthawklabs.homebar.data.repository.RecipeRepository
 import dev.nighthawklabs.homebar.data.repository.RoomIngredientRepository
 import dev.nighthawklabs.homebar.data.repository.RoomRecipeRepository
+import dev.nighthawklabs.homebar.data.repository.RoomSubstitutionGroupRepository
+import dev.nighthawklabs.homebar.data.repository.SubstitutionGroupRepository
 import dev.nighthawklabs.homebar.data.seed.SampleIngredientData
 import dev.nighthawklabs.homebar.data.seed.SampleRecipeData
+import dev.nighthawklabs.homebar.data.seed.SampleSubstitutionGroupData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,7 +22,7 @@ class HomeBarApplication : Application() {
 
     private val database: AppDatabase by lazy {
         Room.databaseBuilder(this, AppDatabase::class.java, "home-bar.db")
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
 
@@ -33,11 +36,20 @@ class HomeBarApplication : Application() {
 
     val recipeRepository: RecipeRepository by lazy { roomRecipeRepository }
 
+    private val roomSubstitutionGroupRepository: RoomSubstitutionGroupRepository by lazy {
+        RoomSubstitutionGroupRepository(database.substitutionGroupDao())
+    }
+
+    val substitutionGroupRepository: SubstitutionGroupRepository by lazy {
+        roomSubstitutionGroupRepository
+    }
+
     override fun onCreate() {
         super.onCreate()
         applicationScope.launch {
             database.ingredientDao().insertAll(SampleIngredientData.ingredients)
             roomRecipeRepository.insertRecipesIfAbsent(SampleRecipeData.recipes)
+            roomSubstitutionGroupRepository.insertGroupsIfAbsent(SampleSubstitutionGroupData.groups)
         }
     }
 }

@@ -38,6 +38,14 @@ object SampleIngredientData {
             notes = "",
         ),
         IngredientEntity(
+            id = "pepsi",
+            name = "Pepsi",
+            category = IngredientCategory.MIXER,
+            inStock = true,
+            runningLow = false,
+            notes = "",
+        ),
+        IngredientEntity(
             id = "angostura-bitters",
             name = "Angostura bitters",
             category = IngredientCategory.BITTERS,
