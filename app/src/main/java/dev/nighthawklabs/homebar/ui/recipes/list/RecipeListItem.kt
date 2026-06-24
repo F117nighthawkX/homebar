@@ -12,10 +12,17 @@ import dev.nighthawklabs.homebar.domain.model.SubstitutionGroup
 data class RecipeListUiState(
     val recipes: List<RecipeListItem> = emptyList(),
     val selectedFilter: RecipeListFilterOption = RecipeListFilterOption.MAKEABLE_NOW,
+    val searchText: String = "",
 )
 
 fun RecipeListUiState.emptyStateMessage(): String? =
-    if (recipes.isEmpty()) "No recipes match the ${selectedFilter.label.lowercase()} filter." else null
+    if (recipes.isNotEmpty()) {
+        null
+    } else if (searchText.isBlank()) {
+        "No recipes match the ${selectedFilter.label.lowercase()} filter."
+    } else {
+        "No recipes match your search with the ${selectedFilter.label.lowercase()} filter."
+    }
 
 enum class RecipeListFilterOption(val label: String) {
     MAKEABLE_NOW("Makeable now"),
@@ -73,16 +80,19 @@ fun createRecipeListItems(
     }
 }
 
-fun RecipeListFilterOption.toFilterState(): RecipeListFilterState = when (this) {
-    RecipeListFilterOption.MAKEABLE_NOW -> RecipeListFilterState()
+fun RecipeListFilterOption.toFilterState(searchText: String = ""): RecipeListFilterState = when (this) {
+    RecipeListFilterOption.MAKEABLE_NOW -> RecipeListFilterState(searchText = searchText)
     RecipeListFilterOption.MISSING_ONE_INGREDIENT -> RecipeListFilterState(
         makeabilityFilter = RecipeMakeabilityFilter.MISSING_ONE_INGREDIENT,
+        searchText = searchText,
     )
     RecipeListFilterOption.ALL_RECIPES -> RecipeListFilterState(
         makeabilityFilter = RecipeMakeabilityFilter.ALL_RECIPES,
+        searchText = searchText,
     )
     RecipeListFilterOption.FAVORITES -> RecipeListFilterState(
         makeabilityFilter = RecipeMakeabilityFilter.ALL_RECIPES,
+        searchText = searchText,
         favoriteOnly = true,
     )
 }

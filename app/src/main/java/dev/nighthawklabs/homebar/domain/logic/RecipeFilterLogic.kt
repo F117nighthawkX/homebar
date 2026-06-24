@@ -1,6 +1,7 @@
 package dev.nighthawklabs.homebar.domain.logic
 
 import dev.nighthawklabs.homebar.domain.model.Recipe
+import dev.nighthawklabs.homebar.domain.model.Ingredient
 import dev.nighthawklabs.homebar.domain.model.RecipeListFilterState
 import dev.nighthawklabs.homebar.domain.model.RecipeMakeabilityFilter
 import dev.nighthawklabs.homebar.domain.model.RecipeMatchResult
@@ -15,14 +16,18 @@ fun filterRecipes(
     recipes: Collection<RecipeWithMatchResult>,
     filterState: RecipeListFilterState,
     substitutionGroups: Collection<SubstitutionGroup>,
-): List<RecipeWithMatchResult> = recipes.filter { recipeWithMatch ->
-    recipeWithMatch.matchesMakeabilityFilter(filterState.makeabilityFilter) &&
-        recipeWithMatch.recipe.matchesSearch(filterState.searchText) &&
-        recipeWithMatch.recipe.matchesIngredientFilter(
-            ingredientId = filterState.ingredientFilter,
-            substitutionGroups = substitutionGroups,
-        ) &&
-        (!filterState.favoriteOnly || recipeWithMatch.recipe.isFavorite)
+    ingredients: Collection<Ingredient> = emptyList(),
+): List<RecipeWithMatchResult> {
+    val ingredientNames = ingredients.associate { ingredient -> ingredient.id to ingredient.name }
+    return recipes.filter { recipeWithMatch ->
+        recipeWithMatch.matchesMakeabilityFilter(filterState.makeabilityFilter) &&
+            recipeWithMatch.recipe.matchesSearch(filterState.searchText, ingredientNames) &&
+            recipeWithMatch.recipe.matchesIngredientFilter(
+                ingredientId = filterState.ingredientFilter,
+                substitutionGroups = substitutionGroups,
+            ) &&
+            (!filterState.favoriteOnly || recipeWithMatch.recipe.isFavorite)
+    }
 }
 
 private fun RecipeWithMatchResult.matchesMakeabilityFilter(
@@ -33,10 +38,16 @@ private fun RecipeWithMatchResult.matchesMakeabilityFilter(
     RecipeMakeabilityFilter.ALL_RECIPES -> true
 }
 
-private fun Recipe.matchesSearch(searchText: String): Boolean {
+private fun Recipe.matchesSearch(
+    searchText: String,
+    ingredientNames: Map<String, String>,
+): Boolean {
     val query = searchText.trim()
     return query.isEmpty() || name.contains(query, ignoreCase = true) ||
-        tags.any { tag -> tag.contains(query, ignoreCase = true) }
+        tags.any { tag -> tag.contains(query, ignoreCase = true) } ||
+        ingredients.any { recipeIngredient ->
+            ingredientNames[recipeIngredient.ingredientId]?.contains(query, ignoreCase = true) == true
+        }
 }
 
 private fun Recipe.matchesIngredientFilter(

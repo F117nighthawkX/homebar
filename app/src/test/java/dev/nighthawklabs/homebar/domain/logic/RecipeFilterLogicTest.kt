@@ -1,6 +1,8 @@
 package dev.nighthawklabs.homebar.domain.logic
 
 import dev.nighthawklabs.homebar.domain.model.Recipe
+import dev.nighthawklabs.homebar.domain.model.Ingredient
+import dev.nighthawklabs.homebar.domain.model.IngredientCategory
 import dev.nighthawklabs.homebar.domain.model.RecipeIngredient
 import dev.nighthawklabs.homebar.domain.model.RecipeListFilterState
 import dev.nighthawklabs.homebar.domain.model.RecipeMakeabilityFilter
@@ -114,6 +116,83 @@ class RecipeFilterLogicTest {
         assertEquals(listOf("margarita"), result.map { it.recipe.id })
     }
 
+    @Test
+    fun `search matches recipe names tags and ingredient names`() {
+        val margarita = matchedRecipe(
+            id = "margarita",
+            name = "Margarita",
+            ingredientIds = listOf("tequila"),
+            status = RecipeMatchStatus.MAKEABLE,
+            tags = listOf("Citrus"),
+        )
+        val whiskeySour = matchedRecipe(
+            id = "whiskey-sour",
+            name = "Whiskey Sour",
+            ingredientIds = listOf("lemon-juice"),
+            status = RecipeMatchStatus.MAKEABLE,
+            tags = listOf("Sour"),
+        )
+        val recipes = listOf(margarita, whiskeySour)
+        val ingredients = listOf(
+            ingredient("tequila", "Tequila"),
+            ingredient("lemon-juice", "Lemon juice"),
+        )
+
+        assertEquals(
+            listOf("margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(searchText = "margarita"),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+        assertEquals(
+            listOf("margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(searchText = "citrus"),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+        assertEquals(
+            listOf("margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(searchText = "tequila"),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+    }
+
+    @Test
+    fun `search combines with the selected makeability filter`() {
+        val makeableMargarita = matchedRecipe(
+            id = "margarita",
+            name = "Margarita",
+            ingredientIds = listOf("tequila"),
+            status = RecipeMatchStatus.MAKEABLE,
+        )
+        val missingTequilaSour = matchedRecipe(
+            id = "tequila-sour",
+            name = "Tequila Sour",
+            ingredientIds = listOf("tequila"),
+            status = RecipeMatchStatus.MISSING_INGREDIENTS,
+            missingIngredients = listOf("tequila"),
+        )
+
+        val result = filterRecipes(
+            recipes = listOf(makeableMargarita, missingTequilaSour),
+            filterState = RecipeListFilterState(searchText = "tequila"),
+            substitutionGroups = emptyList(),
+            ingredients = listOf(ingredient("tequila", "Tequila")),
+        )
+
+        assertEquals(listOf("margarita"), result.map { it.recipe.id })
+    }
+
     private fun matchedRecipe(
         id: String,
         name: String,
@@ -121,6 +200,7 @@ class RecipeFilterLogicTest {
         status: RecipeMatchStatus,
         missingIngredients: List<String> = emptyList(),
         isFavorite: Boolean = false,
+        tags: List<String> = emptyList(),
     ) = RecipeWithMatchResult(
         recipe = Recipe(
             id = id,
@@ -133,7 +213,7 @@ class RecipeFilterLogicTest {
             glassware = "",
             tools = emptyList(),
             garnish = emptyList(),
-            tags = emptyList(),
+            tags = tags,
             isFavorite = isFavorite,
             isCustom = false,
         ),
@@ -143,5 +223,14 @@ class RecipeFilterLogicTest {
             substitutionsUsed = emptyList(),
             runningLowIngredients = emptyList(),
         ),
+    )
+
+    private fun ingredient(id: String, name: String) = Ingredient(
+        id = id,
+        name = name,
+        category = IngredientCategory.OTHER,
+        inStock = true,
+        runningLow = false,
+        notes = "",
     )
 }

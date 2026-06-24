@@ -15,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,6 +61,20 @@ fun RecipeListScreen(
                     Text(
                         text = "Recipes",
                         style = MaterialTheme.typography.headlineSmall,
+                    )
+                    OutlinedTextField(
+                        value = uiState.searchText,
+                        onValueChange = viewModel::updateSearchText,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Search recipes") },
+                        singleLine = true,
+                        trailingIcon = {
+                            if (uiState.searchText.isNotBlank()) {
+                                TextButton(onClick = { viewModel.updateSearchText("") }) {
+                                    Text("Clear")
+                                }
+                            }
+                        },
                     )
                     Row(
                         modifier = Modifier

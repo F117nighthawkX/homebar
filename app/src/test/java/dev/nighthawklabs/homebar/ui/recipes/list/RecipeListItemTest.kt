@@ -19,6 +19,14 @@ class RecipeListItemTest {
     }
 
     @Test
+    fun `empty search result identifies the active filter`() {
+        assertEquals(
+            "No recipes match your search with the makeable now filter.",
+            RecipeListUiState(searchText = "unknown").emptyStateMessage(),
+        )
+    }
+
+    @Test
     fun `filter options map to the expected domain filter state`() {
         assertEquals(
             RecipeMakeabilityFilter.MAKEABLE_NOW,
