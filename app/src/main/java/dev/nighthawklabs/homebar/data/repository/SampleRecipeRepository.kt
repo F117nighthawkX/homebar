@@ -4,7 +4,8 @@ import dev.nighthawklabs.homebar.domain.model.PlaceholderRecipe
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
-class SampleRecipeRepository : RecipeRepository {
+/** Bucket 0 presentation placeholder retained until Bucket 2 replaces its screens. */
+class SampleRecipeRepository {
     private val recipes = listOf(
         PlaceholderRecipe(
             id = "placeholder-old-fashioned",
@@ -13,8 +14,7 @@ class SampleRecipeRepository : RecipeRepository {
         ),
     )
 
-    override fun observePlaceholderRecipes(): Flow<List<PlaceholderRecipe>> = flowOf(recipes)
+    fun observePlaceholderRecipes(): Flow<List<PlaceholderRecipe>> = flowOf(recipes)
 
-    override fun getPlaceholderRecipe(id: String): PlaceholderRecipe? = recipes.find { it.id == id }
+    fun getPlaceholderRecipe(id: String): PlaceholderRecipe? = recipes.find { it.id == id }
 }
-

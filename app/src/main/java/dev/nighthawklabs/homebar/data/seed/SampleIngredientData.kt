@@ -45,5 +45,29 @@ object SampleIngredientData {
             runningLow = true,
             notes = "",
         ),
+        IngredientEntity(
+            id = "agave-syrup",
+            name = "Agave syrup",
+            category = IngredientCategory.SYRUP,
+            inStock = true,
+            runningLow = false,
+            notes = "",
+        ),
+        IngredientEntity(
+            id = "bourbon",
+            name = "Bourbon",
+            category = IngredientCategory.SPIRIT,
+            inStock = true,
+            runningLow = false,
+            notes = "",
+        ),
+        IngredientEntity(
+            id = "simple-syrup",
+            name = "Simple syrup",
+            category = IngredientCategory.SYRUP,
+            inStock = true,
+            runningLow = false,
+            notes = "",
+        ),
     )
 }
