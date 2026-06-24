@@ -1,5 +1,6 @@
 package dev.nighthawklabs.homebar.ui.inventory
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +29,7 @@ import dev.nighthawklabs.homebar.domain.model.IngredientCategory
 @OptIn(ExperimentalMaterial3Api::class)
 fun InventoryScreen(
     onBack: () -> Unit,
+    onIngredientSelected: (String) -> Unit,
     viewModel: InventoryViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -53,10 +55,7 @@ fun InventoryScreen(
             items(uiState.ingredients, key = { it.id }) { ingredient ->
                 IngredientCard(
                     ingredient = ingredient,
-                    onMarkInStock = { viewModel.markInStock(ingredient.id) },
-                    onMarkNotInStock = { viewModel.markNotInStock(ingredient.id) },
-                    onMarkRunningLow = { viewModel.markRunningLow(ingredient.id) },
-                    onClearRunningLow = { viewModel.clearRunningLow(ingredient.id) },
+                    onClick = { onIngredientSelected(ingredient.id) },
                 )
             }
         }
@@ -66,12 +65,13 @@ fun InventoryScreen(
 @Composable
 private fun IngredientCard(
     ingredient: Ingredient,
-    onMarkInStock: () -> Unit,
-    onMarkNotInStock: () -> Unit,
-    onMarkRunningLow: () -> Unit,
-    onClearRunningLow: () -> Unit,
+    onClick: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -80,17 +80,6 @@ private fun IngredientCard(
             Text(categoryLabel(ingredient.category), style = MaterialTheme.typography.bodyMedium)
             Text(if (ingredient.inStock) "In stock" else "Not in stock")
             if (ingredient.runningLow) Text("Running low")
-
-            if (ingredient.inStock) {
-                TextButton(onClick = onMarkNotInStock) { Text("Mark not in stock") }
-            } else {
-                TextButton(onClick = onMarkInStock) { Text("Mark in stock") }
-            }
-            if (ingredient.runningLow) {
-                TextButton(onClick = onClearRunningLow) { Text("Clear running low") }
-            } else {
-                TextButton(onClick = onMarkRunningLow) { Text("Mark running low") }
-            }
         }
     }
 }

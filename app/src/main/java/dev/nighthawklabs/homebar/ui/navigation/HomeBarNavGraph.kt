@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import dev.nighthawklabs.homebar.ui.inventory.InventoryScreen
+import dev.nighthawklabs.homebar.ui.inventory.detail.IngredientDetailScreen
 import dev.nighthawklabs.homebar.ui.recipes.detail.RecipeDetailScreen
 import dev.nighthawklabs.homebar.ui.recipes.list.RecipeListScreen
 import dev.nighthawklabs.homebar.ui.settings.SettingsScreen
@@ -18,9 +19,13 @@ object HomeBarRoute {
     const val RecipeListWithIngredient = "$RecipeList?ingredientId={ingredientId}"
     const val RecipeDetail = "recipe_detail/{recipeId}"
     const val Inventory = "inventory"
+    const val IngredientDetail = "ingredient_detail/{ingredientId}"
     const val Settings = "settings"
 
     fun recipeDetail(recipeId: String): String = "recipe_detail/$recipeId"
+
+    fun ingredientDetail(ingredientId: String): String =
+        "ingredient_detail/${URLEncoder.encode(ingredientId, StandardCharsets.UTF_8)}"
 
     fun recipeList(ingredientId: String? = null): String = ingredientId?.let {
         "$RecipeList?ingredientId=${URLEncoder.encode(it, StandardCharsets.UTF_8)}"
@@ -59,7 +64,21 @@ fun HomeBarNavGraph() {
             )
         }
         composable(HomeBarRoute.Inventory) {
-            InventoryScreen(onBack = { navController.popBackStack() })
+            InventoryScreen(
+                onBack = { navController.popBackStack() },
+                onIngredientSelected = { ingredientId ->
+                    navController.navigate(HomeBarRoute.ingredientDetail(ingredientId))
+                },
+            )
+        }
+        composable(
+            route = HomeBarRoute.IngredientDetail,
+            arguments = listOf(navArgument("ingredientId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            IngredientDetailScreen(
+                ingredientId = checkNotNull(backStackEntry.arguments?.getString("ingredientId")),
+                onBack = { navController.popBackStack() },
+            )
         }
         composable(HomeBarRoute.Settings) {
             SettingsScreen(onBack = { navController.popBackStack() })
