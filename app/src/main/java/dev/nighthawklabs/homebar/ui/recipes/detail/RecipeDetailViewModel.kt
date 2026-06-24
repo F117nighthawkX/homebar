@@ -12,8 +12,13 @@ import kotlinx.coroutines.launch
 
 class RecipeDetailViewModel(
     application: Application,
-    private val repository: RecipeRepository = (application as HomeBarApplication).recipeRepository,
+    private val repository: RecipeRepository,
 ) : AndroidViewModel(application) {
+    constructor(application: Application) : this(
+        application = application,
+        repository = (application as HomeBarApplication).recipeRepository,
+    )
+
     private val _servingState = MutableStateFlow<RecipeServingState?>(null)
     val servingState: StateFlow<RecipeServingState?> = _servingState
 

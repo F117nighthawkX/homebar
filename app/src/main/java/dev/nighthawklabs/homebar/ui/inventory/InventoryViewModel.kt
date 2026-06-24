@@ -18,9 +18,13 @@ data class InventoryUiState(
 
 class InventoryViewModel(
     application: Application,
-    private val repository: IngredientRepository =
-        (application as HomeBarApplication).ingredientRepository,
+    private val repository: IngredientRepository,
 ) : AndroidViewModel(application) {
+    constructor(application: Application) : this(
+        application = application,
+        repository = (application as HomeBarApplication).ingredientRepository,
+    )
+
     val uiState: StateFlow<InventoryUiState> = repository.observeIngredients()
         .map(::InventoryUiState)
         .stateIn(

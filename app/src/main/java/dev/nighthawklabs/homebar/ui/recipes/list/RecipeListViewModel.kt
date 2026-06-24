@@ -12,8 +12,13 @@ import kotlinx.coroutines.flow.SharingStarted
 
 class RecipeListViewModel(
     application: Application,
-    repository: RecipeRepository = (application as HomeBarApplication).recipeRepository,
+    repository: RecipeRepository,
 ) : AndroidViewModel(application) {
+    constructor(application: Application) : this(
+        application = application,
+        repository = (application as HomeBarApplication).recipeRepository,
+    )
+
     val recipes: StateFlow<List<Recipe>> = repository.observeRecipes().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
