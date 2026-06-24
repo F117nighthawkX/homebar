@@ -45,6 +45,10 @@ class RecipeListItemTest {
             RecipeListFilterOption.FAVORITES.toFilterState().makeabilityFilter,
         )
         assertEquals(true, RecipeListFilterOption.FAVORITES.toFilterState().favoriteOnly)
+        assertEquals(
+            "tequila",
+            RecipeListFilterOption.MAKEABLE_NOW.toFilterState(ingredientId = "tequila").ingredientFilter,
+        )
     }
 
     @Test

@@ -13,15 +13,21 @@ data class RecipeListUiState(
     val recipes: List<RecipeListItem> = emptyList(),
     val selectedFilter: RecipeListFilterOption = RecipeListFilterOption.MAKEABLE_NOW,
     val searchText: String = "",
+    val activeIngredientName: String? = null,
 )
 
 fun RecipeListUiState.emptyStateMessage(): String? =
     if (recipes.isNotEmpty()) {
         null
-    } else if (searchText.isBlank()) {
+    } else if (searchText.isBlank() && activeIngredientName == null) {
         "No recipes match the ${selectedFilter.label.lowercase()} filter."
-    } else {
+    } else if (searchText.isBlank()) {
+        "No recipes use $activeIngredientName with the ${selectedFilter.label.lowercase()} filter."
+    } else if (activeIngredientName == null) {
         "No recipes match your search with the ${selectedFilter.label.lowercase()} filter."
+    } else {
+        "No recipes match your search and $activeIngredientName with the " +
+            "${selectedFilter.label.lowercase()} filter."
     }
 
 enum class RecipeListFilterOption(val label: String) {
@@ -80,19 +86,28 @@ fun createRecipeListItems(
     }
 }
 
-fun RecipeListFilterOption.toFilterState(searchText: String = ""): RecipeListFilterState = when (this) {
-    RecipeListFilterOption.MAKEABLE_NOW -> RecipeListFilterState(searchText = searchText)
+fun RecipeListFilterOption.toFilterState(
+    searchText: String = "",
+    ingredientId: String? = null,
+): RecipeListFilterState = when (this) {
+    RecipeListFilterOption.MAKEABLE_NOW -> RecipeListFilterState(
+        searchText = searchText,
+        ingredientFilter = ingredientId,
+    )
     RecipeListFilterOption.MISSING_ONE_INGREDIENT -> RecipeListFilterState(
         makeabilityFilter = RecipeMakeabilityFilter.MISSING_ONE_INGREDIENT,
         searchText = searchText,
+        ingredientFilter = ingredientId,
     )
     RecipeListFilterOption.ALL_RECIPES -> RecipeListFilterState(
         makeabilityFilter = RecipeMakeabilityFilter.ALL_RECIPES,
         searchText = searchText,
+        ingredientFilter = ingredientId,
     )
     RecipeListFilterOption.FAVORITES -> RecipeListFilterState(
         makeabilityFilter = RecipeMakeabilityFilter.ALL_RECIPES,
         searchText = searchText,
+        ingredientFilter = ingredientId,
         favoriteOnly = true,
     )
 }

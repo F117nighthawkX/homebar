@@ -70,21 +70,27 @@ class RecipeFilterLogicTest {
     }
 
     @Test
-    fun `ingredient filter includes approved substitute relationships`() {
+    fun `ingredient filter includes direct and approved substitute relationships`() {
         val cubaLibre = matchedRecipe(
             id = "cuba-libre",
             name = "Cuba Libre",
             ingredientIds = listOf("rum", "coke"),
             status = RecipeMatchStatus.MAKEABLE,
         )
+        val pepsiHighball = matchedRecipe(
+            id = "pepsi-highball",
+            name = "Pepsi Highball",
+            ingredientIds = listOf("pepsi"),
+            status = RecipeMatchStatus.MAKEABLE,
+        )
 
         val result = filterRecipes(
-            recipes = listOf(cubaLibre),
+            recipes = listOf(cubaLibre, pepsiHighball),
             filterState = RecipeListFilterState(ingredientFilter = "pepsi"),
             substitutionGroups = listOf(colaGroup),
         )
 
-        assertEquals(listOf("cuba-libre"), result.map { it.recipe.id })
+        assertEquals(listOf("cuba-libre", "pepsi-highball"), result.map { it.recipe.id })
     }
 
     @Test
@@ -191,6 +197,35 @@ class RecipeFilterLogicTest {
         )
 
         assertEquals(listOf("margarita"), result.map { it.recipe.id })
+    }
+
+    @Test
+    fun `ingredient filter combines with search and favorites`() {
+        val favoriteCubaLibre = matchedRecipe(
+            id = "cuba-libre",
+            name = "Cuba Libre",
+            ingredientIds = listOf("coke"),
+            status = RecipeMatchStatus.MAKEABLE,
+            isFavorite = true,
+        )
+        val nonFavoriteCubaLibre = matchedRecipe(
+            id = "cuba-libre-variation",
+            name = "Cuba Libre Variation",
+            ingredientIds = listOf("coke"),
+            status = RecipeMatchStatus.MAKEABLE,
+        )
+
+        val result = filterRecipes(
+            recipes = listOf(favoriteCubaLibre, nonFavoriteCubaLibre),
+            filterState = RecipeListFilterState(
+                searchText = "cuba",
+                ingredientFilter = "pepsi",
+                favoriteOnly = true,
+            ),
+            substitutionGroups = listOf(colaGroup),
+        )
+
+        assertEquals(listOf("cuba-libre"), result.map { it.recipe.id })
     }
 
     private fun matchedRecipe(

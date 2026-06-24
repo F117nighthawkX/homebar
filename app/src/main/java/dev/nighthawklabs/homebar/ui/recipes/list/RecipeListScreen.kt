@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Modifier
@@ -31,11 +32,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun RecipeListScreen(
+    initialIngredientId: String?,
     onRecipeSelected: (String) -> Unit,
     onInventorySelected: () -> Unit,
     onSettingsSelected: () -> Unit,
     viewModel: RecipeListViewModel = viewModel(),
 ) {
+    LaunchedEffect(initialIngredientId) {
+        initialIngredientId?.let(viewModel::setIngredientFilter)
+    }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -76,6 +81,14 @@ fun RecipeListScreen(
                             }
                         },
                     )
+                    uiState.activeIngredientName?.let { ingredientName ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("Ingredient: $ingredientName")
+                            TextButton(onClick = { viewModel.setIngredientFilter(null) }) {
+                                Text("Clear ingredient")
+                            }
+                        }
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

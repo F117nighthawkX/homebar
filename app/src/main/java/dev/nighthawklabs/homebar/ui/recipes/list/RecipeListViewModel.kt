@@ -33,6 +33,7 @@ class RecipeListViewModel(
 
     private val selectedFilter = MutableStateFlow(RecipeListFilterOption.MAKEABLE_NOW)
     private val searchText = MutableStateFlow("")
+    private val ingredientFilter = MutableStateFlow<String?>(null)
 
     private val recipeListSource = combine(
         recipeRepository.observeRecipes(),
@@ -55,10 +56,14 @@ class RecipeListViewModel(
         recipeListSource,
         selectedFilter,
         searchText,
-    ) { source, filter, currentSearchText ->
+        ingredientFilter,
+    ) { source, filter, currentSearchText, currentIngredientId ->
         val filteredRecipes = filterRecipes(
             recipes = source.recipeMatches,
-            filterState = filter.toFilterState(currentSearchText),
+            filterState = filter.toFilterState(
+                searchText = currentSearchText,
+                ingredientId = currentIngredientId,
+            ),
             substitutionGroups = source.substitutionGroups,
             ingredients = source.ingredients,
         )
@@ -66,6 +71,10 @@ class RecipeListViewModel(
             recipes = createRecipeListItems(filteredRecipes, source.ingredients),
             selectedFilter = filter,
             searchText = currentSearchText,
+            activeIngredientName = currentIngredientId?.let { ingredientId ->
+                source.ingredients.firstOrNull { it.id == ingredientId }?.name
+                    ?: ingredientId.replace('-', ' ')
+            },
         )
     }.stateIn(
         scope = viewModelScope,
@@ -79,6 +88,10 @@ class RecipeListViewModel(
 
     fun updateSearchText(value: String) {
         searchText.value = value
+    }
+
+    fun setIngredientFilter(ingredientId: String?) {
+        ingredientFilter.value = ingredientId
     }
 
     private data class RecipeListSource(
