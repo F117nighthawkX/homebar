@@ -4,11 +4,41 @@ import dev.nighthawklabs.homebar.domain.model.Ingredient
 import dev.nighthawklabs.homebar.domain.model.IngredientCategory
 import dev.nighthawklabs.homebar.domain.model.Recipe
 import dev.nighthawklabs.homebar.domain.model.RecipeIngredient
+import dev.nighthawklabs.homebar.domain.model.RecipeMakeabilityFilter
 import dev.nighthawklabs.homebar.domain.model.SubstitutionGroup
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class RecipeListItemTest {
+    @Test
+    fun `empty filter result has a clear message`() {
+        assertEquals(
+            "No recipes match the favorites filter.",
+            RecipeListUiState(selectedFilter = RecipeListFilterOption.FAVORITES).emptyStateMessage(),
+        )
+    }
+
+    @Test
+    fun `filter options map to the expected domain filter state`() {
+        assertEquals(
+            RecipeMakeabilityFilter.MAKEABLE_NOW,
+            RecipeListFilterOption.MAKEABLE_NOW.toFilterState().makeabilityFilter,
+        )
+        assertEquals(
+            RecipeMakeabilityFilter.MISSING_ONE_INGREDIENT,
+            RecipeListFilterOption.MISSING_ONE_INGREDIENT.toFilterState().makeabilityFilter,
+        )
+        assertEquals(
+            RecipeMakeabilityFilter.ALL_RECIPES,
+            RecipeListFilterOption.ALL_RECIPES.toFilterState().makeabilityFilter,
+        )
+        assertEquals(
+            RecipeMakeabilityFilter.ALL_RECIPES,
+            RecipeListFilterOption.FAVORITES.toFilterState().makeabilityFilter,
+        )
+        assertEquals(true, RecipeListFilterOption.FAVORITES.toFilterState().favoriteOnly)
+    }
+
     @Test
     fun `cards show makeable low inventory missing and substitute based states`() {
         val items = createRecipeListItems(

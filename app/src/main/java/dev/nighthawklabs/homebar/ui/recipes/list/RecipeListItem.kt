@@ -3,12 +3,26 @@ package dev.nighthawklabs.homebar.ui.recipes.list
 import dev.nighthawklabs.homebar.domain.logic.matchRecipe
 import dev.nighthawklabs.homebar.domain.model.Ingredient
 import dev.nighthawklabs.homebar.domain.model.Recipe
+import dev.nighthawklabs.homebar.domain.model.RecipeListFilterState
+import dev.nighthawklabs.homebar.domain.model.RecipeMakeabilityFilter
 import dev.nighthawklabs.homebar.domain.model.RecipeMatchStatus
+import dev.nighthawklabs.homebar.domain.model.RecipeWithMatchResult
 import dev.nighthawklabs.homebar.domain.model.SubstitutionGroup
 
 data class RecipeListUiState(
     val recipes: List<RecipeListItem> = emptyList(),
+    val selectedFilter: RecipeListFilterOption = RecipeListFilterOption.MAKEABLE_NOW,
 )
+
+fun RecipeListUiState.emptyStateMessage(): String? =
+    if (recipes.isEmpty()) "No recipes match the ${selectedFilter.label.lowercase()} filter." else null
+
+enum class RecipeListFilterOption(val label: String) {
+    MAKEABLE_NOW("Makeable now"),
+    MISSING_ONE_INGREDIENT("Missing 1 ingredient"),
+    ALL_RECIPES("All recipes"),
+    FAVORITES("Favorites"),
+}
 
 /** Presentation data for one recipe card. Match data is calculated from current inventory. */
 data class RecipeListItem(
@@ -26,10 +40,25 @@ fun createRecipeListItems(
     ingredients: List<Ingredient>,
     substitutionGroups: List<SubstitutionGroup>,
 ): List<RecipeListItem> {
+    val recipeMatches = recipes.map { recipe ->
+        RecipeWithMatchResult(
+            recipe = recipe,
+            matchResult = matchRecipe(recipe, ingredients, substitutionGroups),
+        )
+    }
+
+    return createRecipeListItems(recipeMatches, ingredients)
+}
+
+fun createRecipeListItems(
+    recipeMatches: List<RecipeWithMatchResult>,
+    ingredients: List<Ingredient>,
+): List<RecipeListItem> {
     val ingredientNames = ingredients.associate { ingredient -> ingredient.id to ingredient.name }
 
-    return recipes.map { recipe ->
-        val matchResult = matchRecipe(recipe, ingredients, substitutionGroups)
+    return recipeMatches.map { recipeWithMatch ->
+        val recipe = recipeWithMatch.recipe
+        val matchResult = recipeWithMatch.matchResult
         RecipeListItem(
             id = recipe.id,
             name = recipe.name,
@@ -42,6 +71,20 @@ fun createRecipeListItems(
             runningLowIngredientNames = matchResult.runningLowIngredients.map(ingredientNames::labelFor),
         )
     }
+}
+
+fun RecipeListFilterOption.toFilterState(): RecipeListFilterState = when (this) {
+    RecipeListFilterOption.MAKEABLE_NOW -> RecipeListFilterState()
+    RecipeListFilterOption.MISSING_ONE_INGREDIENT -> RecipeListFilterState(
+        makeabilityFilter = RecipeMakeabilityFilter.MISSING_ONE_INGREDIENT,
+    )
+    RecipeListFilterOption.ALL_RECIPES -> RecipeListFilterState(
+        makeabilityFilter = RecipeMakeabilityFilter.ALL_RECIPES,
+    )
+    RecipeListFilterOption.FAVORITES -> RecipeListFilterState(
+        makeabilityFilter = RecipeMakeabilityFilter.ALL_RECIPES,
+        favoriteOnly = true,
+    )
 }
 
 private fun RecipeMatchStatus.toListLabel(missingIngredientCount: Int): String = when (this) {

@@ -7,7 +7,13 @@ import dev.nighthawklabs.homebar.HomeBarApplication
 import dev.nighthawklabs.homebar.data.repository.IngredientRepository
 import dev.nighthawklabs.homebar.data.repository.RecipeRepository
 import dev.nighthawklabs.homebar.data.repository.SubstitutionGroupRepository
+import dev.nighthawklabs.homebar.domain.logic.filterRecipes
+import dev.nighthawklabs.homebar.domain.logic.matchRecipe
+import dev.nighthawklabs.homebar.domain.model.Ingredient
+import dev.nighthawklabs.homebar.domain.model.RecipeWithMatchResult
+import dev.nighthawklabs.homebar.domain.model.SubstitutionGroup
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -25,17 +31,48 @@ class RecipeListViewModel(
         substitutionGroupRepository = application.substitutionGroupRepository,
     )
 
-    val uiState: StateFlow<RecipeListUiState> = combine(
+    private val selectedFilter = MutableStateFlow(RecipeListFilterOption.MAKEABLE_NOW)
+
+    private val recipeListSource = combine(
         recipeRepository.observeRecipes(),
         ingredientRepository.observeIngredients(),
         substitutionGroupRepository.observeSubstitutionGroups(),
     ) { recipes, ingredients, substitutionGroups ->
+        RecipeListSource(
+            recipeMatches = recipes.map { recipe ->
+                RecipeWithMatchResult(
+                    recipe = recipe,
+                    matchResult = matchRecipe(recipe, ingredients, substitutionGroups),
+                )
+            },
+            ingredients = ingredients,
+            substitutionGroups = substitutionGroups,
+        )
+    }
+
+    val uiState: StateFlow<RecipeListUiState> = combine(recipeListSource, selectedFilter) { source, filter ->
+        val filteredRecipes = filterRecipes(
+            recipes = source.recipeMatches,
+            filterState = filter.toFilterState(),
+            substitutionGroups = source.substitutionGroups,
+        )
         RecipeListUiState(
-            recipes = createRecipeListItems(recipes, ingredients, substitutionGroups),
+            recipes = createRecipeListItems(filteredRecipes, source.ingredients),
+            selectedFilter = filter,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = RecipeListUiState(),
+    )
+
+    fun selectFilter(filter: RecipeListFilterOption) {
+        selectedFilter.value = filter
+    }
+
+    private data class RecipeListSource(
+        val recipeMatches: List<RecipeWithMatchResult>,
+        val ingredients: List<Ingredient>,
+        val substitutionGroups: List<SubstitutionGroup>,
     )
 }
