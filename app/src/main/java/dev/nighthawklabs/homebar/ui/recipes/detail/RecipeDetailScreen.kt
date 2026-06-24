@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.nighthawklabs.homebar.domain.model.RecipeIngredient
+import java.math.BigDecimal
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +28,8 @@ fun RecipeDetailScreen(
     viewModel: RecipeDetailViewModel = viewModel(),
 ) {
     LaunchedEffect(recipeId) { viewModel.load(recipeId) }
-    val recipe by viewModel.recipe.collectAsStateWithLifecycle()
+    val servingState by viewModel.servingState.collectAsStateWithLifecycle()
+    val recipe = servingState?.recipe
 
     Scaffold(
         topBar = {
@@ -43,9 +46,26 @@ fun RecipeDetailScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Recipe detail placeholder", style = MaterialTheme.typography.headlineSmall)
-            Text(recipe?.description ?: "This placeholder recipe was not found.")
-            Text("Ingredients, instructions, and serving controls arrive in later buckets.")
+            val currentServingState = servingState
+            if (currentServingState == null) {
+                Text("Recipe not found.", style = MaterialTheme.typography.headlineSmall)
+            } else {
+                Text("Servings: ${currentServingState.selectedServingCount}")
+                Column {
+                    TextButton(onClick = viewModel::decreaseServings) { Text("−") }
+                    TextButton(onClick = viewModel::increaseServings) { Text("+") }
+                }
+                Text("Ingredients", style = MaterialTheme.typography.headlineSmall)
+                currentServingState.displayedIngredients.forEach { ingredient ->
+                    Text(ingredient.displayText())
+                }
+            }
         }
     }
 }
+
+private fun RecipeIngredient.displayText(): String =
+    "${formatQuantity(quantity)} $unit ${ingredientId.replace("-", " ")}".trim()
+
+private fun formatQuantity(quantity: Double): String =
+    BigDecimal.valueOf(quantity).stripTrailingZeros().toPlainString()

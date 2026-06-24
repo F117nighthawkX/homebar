@@ -53,7 +53,7 @@ fun RecipeListScreen(
         ) {
             item {
                 Text(
-                    text = "Recipe list placeholder",
+                    text = "Recipes",
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
@@ -66,7 +66,11 @@ fun RecipeListScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(recipe.name, style = MaterialTheme.typography.titleMedium)
-                        Text(recipe.description, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${recipe.baseServingCount} serving" +
+                                if (recipe.baseServingCount == 1) "" else "s",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                 }
             }

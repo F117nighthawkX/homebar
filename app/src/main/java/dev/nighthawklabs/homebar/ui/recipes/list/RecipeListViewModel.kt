@@ -1,20 +1,22 @@
 package dev.nighthawklabs.homebar.ui.recipes.list
 
-import androidx.lifecycle.ViewModel
-import dev.nighthawklabs.homebar.data.repository.SampleRecipeRepository
-import dev.nighthawklabs.homebar.domain.model.PlaceholderRecipe
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import androidx.lifecycle.viewModelScope
+import dev.nighthawklabs.homebar.HomeBarApplication
+import dev.nighthawklabs.homebar.data.repository.RecipeRepository
+import dev.nighthawklabs.homebar.domain.model.Recipe
 import kotlinx.coroutines.flow.SharingStarted
 
 class RecipeListViewModel(
-    repository: SampleRecipeRepository = SampleRecipeRepository(),
-) : ViewModel() {
-    val recipes: StateFlow<List<PlaceholderRecipe>> = repository.observePlaceholderRecipes().stateIn(
+    application: Application,
+    repository: RecipeRepository = (application as HomeBarApplication).recipeRepository,
+) : AndroidViewModel(application) {
+    val recipes: StateFlow<List<Recipe>> = repository.observeRecipes().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),
     )
 }
-
