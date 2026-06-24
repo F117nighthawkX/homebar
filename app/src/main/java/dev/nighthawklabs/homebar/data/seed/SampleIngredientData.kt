@@ -77,5 +77,21 @@ object SampleIngredientData {
             runningLow = false,
             notes = "",
         ),
+        IngredientEntity(
+            id = "rum",
+            name = "Rum",
+            category = IngredientCategory.SPIRIT,
+            inStock = true,
+            runningLow = false,
+            notes = "",
+        ),
+        IngredientEntity(
+            id = "lemon-juice",
+            name = "Lemon juice",
+            category = IngredientCategory.JUICE,
+            inStock = false,
+            runningLow = false,
+            notes = "",
+        ),
     )
 }

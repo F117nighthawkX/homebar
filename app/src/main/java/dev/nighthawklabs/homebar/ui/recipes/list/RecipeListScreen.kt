@@ -31,7 +31,7 @@ fun RecipeListScreen(
     onSettingsSelected: () -> Unit,
     viewModel: RecipeListViewModel = viewModel(),
 ) {
-    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -58,19 +58,31 @@ fun RecipeListScreen(
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
-            items(recipes, key = { it.id }) { recipe ->
+            if (uiState.recipes.isEmpty()) {
+                item {
+                    Text("No recipes available.")
+                }
+            }
+            items(uiState.recipes, key = { it.id }) { recipe ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onRecipeSelected(recipe.id) },
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         Text(recipe.name, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "${recipe.baseServingCount} serving" +
-                                if (recipe.baseServingCount == 1) "" else "s",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                        if (recipe.isFavorite) Text("Favorite")
+                        Text(recipe.makeabilityLabel, style = MaterialTheme.typography.bodyMedium)
+                        Text(recipe.ingredientSummary, style = MaterialTheme.typography.bodyMedium)
+                        if (recipe.missingIngredientNames.isNotEmpty()) {
+                            Text("Missing: ${recipe.missingIngredientNames.joinToString()}")
+                        }
+                        if (recipe.runningLowIngredientNames.isNotEmpty()) {
+                            Text("Low: ${recipe.runningLowIngredientNames.joinToString()}")
+                        }
                     }
                 }
             }
