@@ -1,0 +1,17 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+
+# Kotlin compiler/cache files
+.kotlin/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local Android signing credentials
+*.jks
+*.keystore
+key.properties
