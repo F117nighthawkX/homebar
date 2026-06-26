@@ -81,6 +81,9 @@ fun HomeBarNavGraph() {
             IngredientDetailScreen(
                 ingredientId = checkNotNull(backStackEntry.arguments?.getString("ingredientId")),
                 onBack = { navController.popBackStack() },
+                onViewRecipesUsingIngredient = { ingredientId ->
+                    navController.navigate(HomeBarRoute.recipeList(ingredientId))
+                },
             )
         }
         composable(HomeBarRoute.Settings) {

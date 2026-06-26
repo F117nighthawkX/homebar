@@ -16,6 +16,10 @@ class RoomSubstitutionGroupRepository(
             groups.map(SubstitutionGroupWithIngredients::toDomain)
         }
 
+    override suspend fun removeSubstitute(ingredientId: String, substituteIngredientId: String) {
+        substitutionGroupDao.removeSubstitute(ingredientId, substituteIngredientId)
+    }
+
     suspend fun insertGroupsIfAbsent(groups: List<SubstitutionGroup>) {
         groups.forEach { group ->
             substitutionGroupDao.insertWithIngredients(group.toEntity(), group.toIngredientReferences())
