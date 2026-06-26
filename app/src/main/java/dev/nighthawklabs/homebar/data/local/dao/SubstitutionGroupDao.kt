@@ -16,6 +16,10 @@ abstract class SubstitutionGroupDao {
     @Query("SELECT * FROM substitution_groups ORDER BY name")
     abstract fun observeAllWithIngredients(): Flow<List<SubstitutionGroupWithIngredients>>
 
+    @Transaction
+    @Query("SELECT * FROM substitution_groups ORDER BY name")
+    abstract suspend fun getAllWithIngredients(): List<SubstitutionGroupWithIngredients>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     protected abstract suspend fun insertGroup(group: SubstitutionGroupEntity)
 
