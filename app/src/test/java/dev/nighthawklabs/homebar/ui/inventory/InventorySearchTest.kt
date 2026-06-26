@@ -34,10 +34,70 @@ class InventorySearchTest {
     }
 
     @Test
+    fun `all category filter returns every ingredient`() {
+        assertEquals(
+            ingredients,
+            filterInventoryIngredients(
+                ingredients = ingredients,
+                searchText = "",
+                categoryFilter = InventoryCategoryFilter.ALL,
+            ),
+        )
+    }
+
+    @Test
+    fun `category filter narrows ingredients by selected category`() {
+        assertEquals(
+            listOf(ingredients[2]),
+            filterInventoryIngredients(
+                ingredients = ingredients,
+                searchText = "",
+                categoryFilter = InventoryCategoryFilter.JUICES,
+            ),
+        )
+    }
+
+    @Test
+    fun `search respects selected category filter`() {
+        assertEquals(
+            emptyList<Ingredient>(),
+            filterInventoryIngredients(
+                ingredients = ingredients,
+                searchText = "tequila",
+                categoryFilter = InventoryCategoryFilter.JUICES,
+            ),
+        )
+    }
+
+    @Test
+    fun `presentation state keeps selected category filter`() {
+        assertEquals(
+            InventoryCategoryFilter.BITTERS,
+            createInventoryUiState(
+                ingredients = ingredients,
+                searchText = "",
+                categoryFilter = InventoryCategoryFilter.BITTERS,
+            ).selectedCategoryFilter,
+        )
+    }
+
+    @Test
     fun `empty search results retain a clear message in presentation state`() {
         assertEquals(
             "No ingredients match \"vodka\".",
             createInventoryUiState(ingredients, "vodka").emptyStateMessage,
+        )
+    }
+
+    @Test
+    fun `empty category results retain a clear message in presentation state`() {
+        assertEquals(
+            "No ingredients match Syrups.",
+            createInventoryUiState(
+                ingredients = ingredients,
+                searchText = "",
+                categoryFilter = InventoryCategoryFilter.SYRUPS,
+            ).emptyStateMessage,
         )
     }
 
