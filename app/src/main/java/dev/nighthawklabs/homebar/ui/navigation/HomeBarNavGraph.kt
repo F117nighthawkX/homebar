@@ -25,11 +25,14 @@ object HomeBarRoute {
     fun recipeDetail(recipeId: String): String = "recipe_detail/$recipeId"
 
     fun ingredientDetail(ingredientId: String): String =
-        "ingredient_detail/${URLEncoder.encode(ingredientId, StandardCharsets.UTF_8)}"
+        "ingredient_detail/${encodeRouteValue(ingredientId)}"
 
     fun recipeList(ingredientId: String? = null): String = ingredientId?.let {
-        "$RecipeList?ingredientId=${URLEncoder.encode(it, StandardCharsets.UTF_8)}"
+        "$RecipeList?ingredientId=${encodeRouteValue(it)}"
     } ?: RecipeList
+
+    private fun encodeRouteValue(value: String): String =
+        URLEncoder.encode(value, StandardCharsets.UTF_8.name())
 }
 
 @Composable

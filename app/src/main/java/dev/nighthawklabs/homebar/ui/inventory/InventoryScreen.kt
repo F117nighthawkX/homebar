@@ -10,9 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -50,7 +51,26 @@ fun InventoryScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Text("Consumable ingredients", style = MaterialTheme.typography.headlineSmall)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Consumable ingredients", style = MaterialTheme.typography.headlineSmall)
+                    OutlinedTextField(
+                        value = uiState.searchText,
+                        onValueChange = viewModel::updateSearchText,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Search ingredients") },
+                        singleLine = true,
+                        trailingIcon = {
+                            if (uiState.searchText.isNotBlank()) {
+                                TextButton(onClick = { viewModel.updateSearchText("") }) {
+                                    Text("Clear")
+                                }
+                            }
+                        },
+                    )
+                    uiState.emptyStateMessage?.let { message ->
+                        Text(message)
+                    }
+                }
             }
             items(uiState.ingredients, key = { it.id }) { ingredient ->
                 IngredientCard(
