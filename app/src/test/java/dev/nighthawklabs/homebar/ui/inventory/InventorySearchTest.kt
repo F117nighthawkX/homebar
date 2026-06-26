@@ -2,6 +2,10 @@ package dev.nighthawklabs.homebar.ui.inventory
 
 import dev.nighthawklabs.homebar.domain.model.Ingredient
 import dev.nighthawklabs.homebar.domain.model.IngredientCategory
+import dev.nighthawklabs.homebar.domain.model.InventoryStatusFilter
+import dev.nighthawklabs.homebar.domain.model.Recipe
+import dev.nighthawklabs.homebar.domain.model.RecipeIngredient
+import dev.nighthawklabs.homebar.domain.model.SubstitutionGroup
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -82,6 +86,79 @@ class InventorySearchTest {
     }
 
     @Test
+    fun `presentation state keeps selected status filter`() {
+        assertEquals(
+            InventoryStatusFilter.RUNNING_LOW,
+            createInventoryUiState(
+                ingredients = ingredients,
+                searchText = "",
+                statusFilter = InventoryStatusFilter.RUNNING_LOW,
+            ).selectedStatusFilter,
+        )
+    }
+
+    @Test
+    fun `status filter narrows ingredients by inventory state`() {
+        val stockedIngredients = listOf(
+            ingredient("tequila", "Tequila", IngredientCategory.SPIRIT, inStock = true),
+            ingredient("coke", "Coke", IngredientCategory.MIXER, inStock = false),
+        )
+
+        assertEquals(
+            listOf("Coke"),
+            filterInventoryIngredients(
+                ingredients = stockedIngredients,
+                searchText = "",
+                statusFilter = InventoryStatusFilter.MISSING,
+            ).map { ingredient -> ingredient.name },
+        )
+    }
+
+    @Test
+    fun `search and category filters combine with selected status filter`() {
+        val filteredIngredients = listOf(
+            ingredient("lime-juice", "Lime juice", IngredientCategory.JUICE, runningLow = true),
+            ingredient("lemon-juice", "Lemon juice", IngredientCategory.JUICE, runningLow = false),
+            ingredient("angostura-bitters", "Angostura bitters", IngredientCategory.BITTERS, runningLow = true),
+        )
+
+        assertEquals(
+            listOf("Lime juice"),
+            filterInventoryIngredients(
+                ingredients = filteredIngredients,
+                searchText = "lime",
+                categoryFilter = InventoryCategoryFilter.JUICES,
+                statusFilter = InventoryStatusFilter.RUNNING_LOW,
+            ).map { ingredient -> ingredient.name },
+        )
+    }
+
+    @Test
+    fun `favorite status filters use recipes and substitutes`() {
+        val filteredIngredients = listOf(
+            ingredient("coke", "Coke", IngredientCategory.MIXER, inStock = false),
+            ingredient("pepsi", "Pepsi", IngredientCategory.MIXER, inStock = true),
+        )
+
+        assertEquals(
+            emptyList<Ingredient>(),
+            filterInventoryIngredients(
+                ingredients = filteredIngredients,
+                searchText = "",
+                statusFilter = InventoryStatusFilter.MISSING_FOR_FAVORITES,
+                recipes = listOf(favoriteRecipe("cuba-libre", "coke")),
+                substitutionGroups = listOf(
+                    SubstitutionGroup(
+                        id = "cola",
+                        name = "Cola",
+                        ingredientIds = listOf("coke", "pepsi"),
+                    ),
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun `empty search results retain a clear message in presentation state`() {
         assertEquals(
             "No ingredients match \"vodka\".",
@@ -101,16 +178,49 @@ class InventorySearchTest {
         )
     }
 
+    @Test
+    fun `empty status results retain a clear message in presentation state`() {
+        assertEquals(
+            "No ingredients match Running low.",
+            createInventoryUiState(
+                ingredients = ingredients,
+                searchText = "",
+                statusFilter = InventoryStatusFilter.RUNNING_LOW,
+            ).emptyStateMessage,
+        )
+    }
+
     private fun ingredient(
         id: String,
         name: String,
         category: IngredientCategory,
+        inStock: Boolean = true,
+        runningLow: Boolean = false,
     ) = Ingredient(
         id = id,
         name = name,
         category = category,
-        inStock = true,
-        runningLow = false,
+        inStock = inStock,
+        runningLow = runningLow,
         notes = "",
+    )
+
+    private fun favoriteRecipe(
+        id: String,
+        vararg ingredientIds: String,
+    ) = Recipe(
+        id = id,
+        name = id,
+        baseServingCount = 1,
+        ingredients = ingredientIds.map { ingredientId ->
+            RecipeIngredient(ingredientId, 1.0, "oz", "")
+        },
+        instructions = "",
+        glassware = "",
+        tools = emptyList(),
+        garnish = emptyList(),
+        tags = emptyList(),
+        isFavorite = true,
+        isCustom = false,
     )
 }

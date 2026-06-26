@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.nighthawklabs.homebar.domain.model.Ingredient
 import dev.nighthawklabs.homebar.domain.model.IngredientCategory
+import dev.nighthawklabs.homebar.domain.model.InventoryStatusFilter
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,6 +82,20 @@ fun InventoryScreen(
                             FilterChip(
                                 selected = filter == uiState.selectedCategoryFilter,
                                 onClick = { viewModel.selectCategoryFilter(filter) },
+                                label = { Text(filter.label) },
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        InventoryStatusFilter.entries.forEach { filter ->
+                            FilterChip(
+                                selected = filter == uiState.selectedStatusFilter,
+                                onClick = { viewModel.selectStatusFilter(filter) },
                                 label = { Text(filter.label) },
                             )
                         }
