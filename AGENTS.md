@@ -261,7 +261,7 @@ If `grep` is unavailable, use an equivalent command or inspect recent logcat
 output manually.
 
 Do not claim a manual UI behavior was verified unless it was actually checked
-on the device or through an automated test.
+on the device AND through an automated test.
 
 If the device is not visible, unauthorized, offline, or unavailable, do not
 block the whole task. Report the exact command output that prevented device

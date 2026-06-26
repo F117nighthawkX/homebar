@@ -24,6 +24,16 @@ class IngredientTest {
     }
 
     @Test
+    fun `marking an ingredient in stock keeps running low unchanged`() {
+        val ingredient = sampleIngredient(inStock = false, runningLow = false)
+
+        val updated = ingredient.markedInStock()
+
+        assertTrue(updated.inStock)
+        assertFalse(updated.runningLow)
+    }
+
+    @Test
     fun `marking an ingredient running low also marks it in stock`() {
         val ingredient = sampleIngredient(inStock = false, runningLow = false)
 
@@ -31,6 +41,16 @@ class IngredientTest {
 
         assertTrue(updated.inStock)
         assertTrue(updated.runningLow)
+    }
+
+    @Test
+    fun `clearing running low keeps the ingredient in stock`() {
+        val ingredient = sampleIngredient(inStock = true, runningLow = true)
+
+        val updated = ingredient.clearedRunningLow()
+
+        assertTrue(updated.inStock)
+        assertFalse(updated.runningLow)
     }
 
     private fun sampleIngredient(inStock: Boolean, runningLow: Boolean) = Ingredient(

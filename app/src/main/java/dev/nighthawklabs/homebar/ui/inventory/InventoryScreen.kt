@@ -94,6 +94,10 @@ fun InventoryScreen(
                 IngredientCard(
                     ingredient = ingredient,
                     onClick = { onIngredientSelected(ingredient.id) },
+                    onMarkInStock = { viewModel.markInStock(ingredient.id) },
+                    onMarkNotInStock = { viewModel.markNotInStock(ingredient.id) },
+                    onMarkRunningLow = { viewModel.markRunningLow(ingredient.id) },
+                    onClearRunningLow = { viewModel.clearRunningLow(ingredient.id) },
                 )
             }
         }
@@ -104,6 +108,10 @@ fun InventoryScreen(
 private fun IngredientCard(
     ingredient: Ingredient,
     onClick: () -> Unit,
+    onMarkInStock: () -> Unit,
+    onMarkNotInStock: () -> Unit,
+    onMarkRunningLow: () -> Unit,
+    onClearRunningLow: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -118,6 +126,26 @@ private fun IngredientCard(
             Text(categoryLabel(ingredient.category), style = MaterialTheme.typography.bodyMedium)
             Text(if (ingredient.inStock) "In stock" else "Not in stock")
             if (ingredient.runningLow) Text("Running low")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (ingredient.inStock) {
+                    TextButton(onClick = onMarkNotInStock) {
+                        Text("Mark not in stock")
+                    }
+                } else {
+                    TextButton(onClick = onMarkInStock) {
+                        Text("Mark in stock")
+                    }
+                }
+                if (ingredient.runningLow) {
+                    TextButton(onClick = onClearRunningLow) {
+                        Text("Clear low")
+                    }
+                } else {
+                    TextButton(onClick = onMarkRunningLow) {
+                        Text("Mark running low")
+                    }
+                }
+            }
         }
     }
 }
