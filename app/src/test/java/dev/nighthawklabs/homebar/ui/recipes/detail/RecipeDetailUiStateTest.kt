@@ -45,6 +45,38 @@ class RecipeDetailUiStateTest {
         assertEquals(listOf("Lemon juice"), state.missingIngredientNames)
     }
 
+    @Test
+    fun `classic recipe can be duplicated but not edited or deleted`() {
+        val state = createRecipeDetailUiState(
+            servingState = RecipeServingState(cubaLibre()),
+            ingredients = listOf(
+                ingredient("rum", "Rum", inStock = true),
+                ingredient("coke", "Coke", inStock = true),
+            ),
+            substitutionGroups = emptyList(),
+        )
+
+        assertEquals(true, state.canDuplicate)
+        assertEquals(false, state.canEdit)
+        assertEquals(false, state.canDelete)
+    }
+
+    @Test
+    fun `custom recipe can be duplicated edited and deleted`() {
+        val state = createRecipeDetailUiState(
+            servingState = RecipeServingState(cubaLibre().copy(isCustom = true)),
+            ingredients = listOf(
+                ingredient("rum", "Rum", inStock = true),
+                ingredient("coke", "Coke", inStock = true),
+            ),
+            substitutionGroups = emptyList(),
+        )
+
+        assertEquals(true, state.canDuplicate)
+        assertEquals(true, state.canEdit)
+        assertEquals(true, state.canDelete)
+    }
+
     private fun cubaLibre() = Recipe(
         id = "cuba-libre",
         name = "Cuba Libre",

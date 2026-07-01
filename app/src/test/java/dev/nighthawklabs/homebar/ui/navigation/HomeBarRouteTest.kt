@@ -11,6 +11,12 @@ class HomeBarRouteTest {
     }
 
     @Test
+    fun `recipe editor routes support new and existing recipes`() {
+        assertEquals("recipe_editor/new", HomeBarRoute.newRecipe())
+        assertEquals("recipe_editor/edit/margarita", HomeBarRoute.editRecipe("margarita"))
+    }
+
+    @Test
     fun `ingredient detail route includes the selected ingredient`() {
         assertEquals("ingredient_detail/lime-juice", HomeBarRoute.ingredientDetail("lime-juice"))
     }

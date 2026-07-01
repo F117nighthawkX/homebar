@@ -9,6 +9,7 @@ import androidx.navigation.navArgument
 import dev.nighthawklabs.homebar.ui.inventory.InventoryScreen
 import dev.nighthawklabs.homebar.ui.inventory.detail.IngredientDetailScreen
 import dev.nighthawklabs.homebar.ui.recipes.detail.RecipeDetailScreen
+import dev.nighthawklabs.homebar.ui.recipes.editor.RecipeEditorScreen
 import dev.nighthawklabs.homebar.ui.recipes.list.RecipeListScreen
 import dev.nighthawklabs.homebar.ui.settings.SettingsScreen
 import java.net.URLEncoder
@@ -18,11 +19,17 @@ object HomeBarRoute {
     const val RecipeList = "recipe_list"
     const val RecipeListWithIngredient = "$RecipeList?ingredientId={ingredientId}"
     const val RecipeDetail = "recipe_detail/{recipeId}"
+    const val NewRecipe = "recipe_editor/new"
+    const val EditRecipe = "recipe_editor/edit/{recipeId}"
     const val Inventory = "inventory"
     const val IngredientDetail = "ingredient_detail/{ingredientId}"
     const val Settings = "settings"
 
     fun recipeDetail(recipeId: String): String = "recipe_detail/$recipeId"
+
+    fun newRecipe(): String = NewRecipe
+
+    fun editRecipe(recipeId: String): String = "recipe_editor/edit/${encodeRouteValue(recipeId)}"
 
     fun ingredientDetail(ingredientId: String): String =
         "ingredient_detail/${encodeRouteValue(ingredientId)}"
@@ -53,6 +60,7 @@ fun HomeBarNavGraph() {
             RecipeListScreen(
                 initialIngredientId = backStackEntry.arguments?.getString("ingredientId"),
                 onRecipeSelected = { navController.navigate(HomeBarRoute.recipeDetail(it)) },
+                onAddRecipe = { navController.navigate(HomeBarRoute.newRecipe()) },
                 onInventorySelected = { navController.navigate(HomeBarRoute.Inventory) },
                 onSettingsSelected = { navController.navigate(HomeBarRoute.Settings) },
             )
@@ -62,6 +70,24 @@ fun HomeBarNavGraph() {
             arguments = listOf(navArgument("recipeId") { type = NavType.StringType }),
         ) { backStackEntry ->
             RecipeDetailScreen(
+                recipeId = checkNotNull(backStackEntry.arguments?.getString("recipeId")),
+                onBack = { navController.popBackStack() },
+                onEditRecipe = { recipeId ->
+                    navController.navigate(HomeBarRoute.editRecipe(recipeId))
+                },
+            )
+        }
+        composable(HomeBarRoute.NewRecipe) {
+            RecipeEditorScreen(
+                recipeId = null,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = HomeBarRoute.EditRecipe,
+            arguments = listOf(navArgument("recipeId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            RecipeEditorScreen(
                 recipeId = checkNotNull(backStackEntry.arguments?.getString("recipeId")),
                 onBack = { navController.popBackStack() },
             )

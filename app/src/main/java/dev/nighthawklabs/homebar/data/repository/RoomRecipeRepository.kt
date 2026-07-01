@@ -29,6 +29,14 @@ class RoomRecipeRepository(
         recipeDao.updateWithIngredients(recipe.toEntity(), recipe.toIngredientEntities())
     }
 
+    override suspend fun deleteCustomRecipe(recipeId: String): Boolean {
+        val recipe = getRecipe(recipeId) ?: return false
+        if (!recipe.isCustom) return false
+
+        recipeDao.deleteWithIngredients(recipeId)
+        return true
+    }
+
     suspend fun insertRecipesIfAbsent(recipes: List<Recipe>) {
         recipes.forEach { recipe ->
             recipeDao.insertWithIngredients(recipe.toEntity(), recipe.toIngredientEntities())

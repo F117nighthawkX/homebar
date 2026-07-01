@@ -14,7 +14,11 @@ data class RecipeDetailUiState(
     val ingredientLines: List<RecipeDetailIngredientLine> = emptyList(),
     val missingIngredientNames: List<String> = emptyList(),
     val runningLowIngredientNames: List<String> = emptyList(),
-)
+) {
+    val canDuplicate: Boolean = recipe != null
+    val canEdit: Boolean = recipe?.isCustom == true
+    val canDelete: Boolean = recipe?.isCustom == true
+}
 
 data class RecipeDetailIngredientLine(
     val quantity: Double,

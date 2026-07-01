@@ -65,4 +65,25 @@ class RecipeDetailViewModel(
             recipeRepository.updateRecipe(updatedRecipe)
         }
     }
+
+    fun duplicateRecipe(onRecipeDuplicated: (String) -> Unit) {
+        val recipeId = _servingState.value?.recipe?.id ?: return
+        viewModelScope.launch {
+            recipeRepository.duplicateRecipe(recipeId)?.let { duplicate ->
+                onRecipeDuplicated(duplicate.id)
+            }
+        }
+    }
+
+    fun deleteCustomRecipe(onRecipeDeleted: () -> Unit) {
+        val recipe = _servingState.value?.recipe ?: return
+        if (!recipe.isCustom) return
+
+        viewModelScope.launch {
+            if (recipeRepository.deleteCustomRecipe(recipe.id)) {
+                _servingState.value = null
+                onRecipeDeleted()
+            }
+        }
+    }
 }

@@ -33,6 +33,9 @@ abstract class RecipeDao {
     @Query("DELETE FROM recipe_ingredients WHERE recipeId = :recipeId")
     protected abstract suspend fun deleteRecipeIngredients(recipeId: String)
 
+    @Query("DELETE FROM recipes WHERE id = :recipeId")
+    protected abstract suspend fun deleteRecipe(recipeId: String)
+
     @Transaction
     open suspend fun insertWithIngredients(
         recipe: RecipeEntity,
@@ -50,5 +53,11 @@ abstract class RecipeDao {
         updateRecipe(recipe)
         deleteRecipeIngredients(recipe.id)
         insertRecipeIngredients(ingredients)
+    }
+
+    @Transaction
+    open suspend fun deleteWithIngredients(recipeId: String) {
+        deleteRecipeIngredients(recipeId)
+        deleteRecipe(recipeId)
     }
 }

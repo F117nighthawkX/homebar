@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun RecipeListScreen(
     initialIngredientId: String?,
     onRecipeSelected: (String) -> Unit,
+    onAddRecipe: () -> Unit,
     onInventorySelected: () -> Unit,
     onSettingsSelected: () -> Unit,
     viewModel: RecipeListViewModel = viewModel(),
@@ -48,6 +49,7 @@ fun RecipeListScreen(
             TopAppBar(
                 title = { Text("Home Bar") },
                 actions = {
+                    TextButton(onClick = onAddRecipe) { Text("Add new recipe") }
                     TextButton(onClick = onInventorySelected) { Text("Inventory") }
                     TextButton(onClick = onSettingsSelected) { Text("Settings") }
                 },
