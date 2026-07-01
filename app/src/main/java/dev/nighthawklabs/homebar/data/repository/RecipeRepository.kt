@@ -10,7 +10,11 @@ interface RecipeRepository {
 
     suspend fun duplicateRecipe(recipeId: String): Recipe?
 
+    suspend fun insertCustomRecipe(recipe: Recipe)
+
     suspend fun updateRecipe(recipe: Recipe)
+
+    suspend fun updateCustomRecipe(recipe: Recipe): Boolean
 
     suspend fun deleteCustomRecipe(recipeId: String): Boolean
 }

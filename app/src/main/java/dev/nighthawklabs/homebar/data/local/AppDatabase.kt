@@ -22,7 +22,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         SubstitutionGroupEntity::class,
         SubstitutionGroupIngredientCrossRef::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(IngredientConverters::class, RecipeConverters::class)
@@ -83,6 +83,14 @@ abstract class AppDatabase : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS `index_substitution_group_ingredients_ingredientId` " +
                         "ON `substitution_group_ingredients` (`ingredientId`)",
                 )
+            }
+        }
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `recipes` ADD COLUMN `sourceRecipeId` TEXT")
+                db.execSQL("ALTER TABLE `recipes` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `recipes` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

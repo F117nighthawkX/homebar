@@ -80,7 +80,10 @@ fun HomeBarNavGraph() {
         composable(HomeBarRoute.NewRecipe) {
             RecipeEditorScreen(
                 recipeId = null,
-                onBack = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
+                onRecipeSaved = { recipeId ->
+                    navController.navigate(HomeBarRoute.recipeDetail(recipeId))
+                },
             )
         }
         composable(
@@ -89,7 +92,10 @@ fun HomeBarNavGraph() {
         ) { backStackEntry ->
             RecipeEditorScreen(
                 recipeId = checkNotNull(backStackEntry.arguments?.getString("recipeId")),
-                onBack = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() },
+                onRecipeSaved = { recipeId ->
+                    navController.navigate(HomeBarRoute.recipeDetail(recipeId))
+                },
             )
         }
         composable(HomeBarRoute.Inventory) {

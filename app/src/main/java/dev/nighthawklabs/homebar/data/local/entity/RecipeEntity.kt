@@ -19,6 +19,9 @@ data class RecipeEntity(
     val tags: List<String>,
     val isFavorite: Boolean,
     val isCustom: Boolean,
+    val sourceRecipeId: String?,
+    val createdAt: Long,
+    val updatedAt: Long,
 )
 
 @Entity(

@@ -11,12 +11,15 @@ class RecipeTest {
     fun `duplicate becomes a custom recipe with a separate identifier`() {
         val original = margarita()
 
-        val duplicate = original.duplicatedAsCustom(newId = "custom-margarita")
+        val duplicate = original.duplicatedAsCustom(newId = "custom-margarita", nowMillis = 100L)
 
         assertEquals("custom-margarita", duplicate.id)
         assertEquals("Margarita Copy", duplicate.name)
         assertTrue(duplicate.isCustom)
         assertFalse(duplicate.isFavorite)
+        assertEquals("margarita", duplicate.sourceRecipeId)
+        assertEquals(100L, duplicate.createdAt)
+        assertEquals(100L, duplicate.updatedAt)
         assertNotEquals(original.id, duplicate.id)
     }
 
