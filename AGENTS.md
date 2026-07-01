@@ -1,329 +1,159 @@
 # AGENTS.md
 
-## Project
-
-This repository contains a native Android app for a home bar cocktail app.
-
-The app's main purpose is to answer:
-
-> What drinks can I make right now with my current home bar inventory?
-
-The app is local-first. Do not add account creation, email login,
-cloud backup, cloud sync, or Firebase unless a future task explicitly
-asks for that decision to be revisited.
-
-## Product Scope
-
-Current planned buckets:
-
-- Bucket 0: Android Project Setup and Stack Decisions
-- Bucket 1: Inventory, Recipes, and Makeability Logic
-- Bucket 2: Recipe List and Recipe Detail Screens
-- Bucket 3: Inventory Management Screens
-- Bucket 4: Recipe Editor and Custom Recipes
-- Bucket 5: Recipe Sharing by Text Message
-- Bucket 6: App Settings and Preferences
-
-Do not add a shopping list. Inventory can show missing and running-low
-ingredients, including missing and running-low ingredients for favorited
-recipes, but the app should not manage purchases.
-
-## Stack
-
-Use:
-
-- Kotlin
-- Native Android
-- Jetpack Compose
-- Material 3
-- Single-activity architecture
-- ViewModels
-- Repository layer
-- Room
-- DataStore Preferences
-- Kotlin coroutines
-- Flow / StateFlow
-- Navigation Compose
-- JUnit tests
-
-Use this package name:
-
-```text
-dev.nighthawklabs.homebar
-```
-
-Use this working app name:
-
-```text
-Home Bar
-```
-
-## Data Ownership
-
-Use Room for structured app data:
-
-- Recipes
-- Ingredients
-- Inventory state
-- Substitute groups
-- Custom recipe data
-
-Use DataStore Preferences only for small settings:
-
-- Default recipe filter
-- Default inventory filter
-- Measurement display preference
-- Theme preference
-- Recipe sharing preferences
-
-Do not store recipes, ingredients, inventory, or substitute data in
-DataStore.
-
-## Core Product Decisions
-
-- Serving multiplier changes displayed ingredient quantities only.
-- Serving multiplier does not change the saved base recipe.
-- Running low ingredients still count as in stock.
-- Substitutes count as valid ingredients for recipe matching.
-- Substitutes are two-way by default.
-- Substitution details should appear inline in recipe detail ingredient lines.
-- Recipe list should not separate substitute-based recipes into a different
-  category.
-- Recipe match status should be calculated from current recipe, inventory,
-  and substitute data.
-- Recipe match status should not be stored as stale derived data.
-- Garnishes do not block makeability in the first version.
-- Tools and glassware do not block makeability.
-- Tools and glassware are not consumable inventory.
-- Bucket 2 default recipe filter is `Makeable now`.
-- Bucket 3 inventory filters include missing and running-low ingredients for
-  favorited recipes.
-- Recipe sharing uses the Android share sheet.
-- Recipe sharing should not send SMS directly.
-- Recipe sharing should not request SMS or contacts permissions.
-- Account creation and cloud backup are out of scope for the current app plan.
+Project instructions for Codex. These rules apply unless a more specific `AGENTS.md` overrides them.
 
-## Development Rules
+Bias: careful, verified work over speed on non-trivial tasks. For trivial typo fixes or obvious one-line edits, keep the same intent without extra ceremony.
 
-- Keep changes focused on the current bucket and Epic.
-- Do not build future buckets early.
-- Do not add dependencies unless they are needed for the current bucket.
-- Do not add Android permissions unless the current bucket requires them.
-- Keep domain logic separate from UI code.
-- Make recipe matching, serving scaling, substitute matching, and share
-  formatting testable with plain unit tests.
-- Prefer simple, readable Kotlin over clever abstractions.
-- Use clear names for models, state, and actions.
-- Avoid large rewrites unless the current bucket requires them.
-- Do not create branches, commit, push, or run destructive git commands unless
-  explicitly asked.
-- Run relevant tests before reporting completion.
-- Report files created, files changed, commands run, build status, test status,
-  and any manual Android Studio steps.
+## Project Commands
 
-## Documentation Routing
+Fill these in for each repository:
+- Install: `TODO`
+- Test: `TODO`
+- Lint: `TODO`
+- Typecheck: `TODO`
+- Build: `TODO`
+- Format: `TODO`
 
-Product docs should live under:
+If a command is missing, search the repo for scripts, task files, CI config, package manifests, Makefiles, or docs before asking.
 
-```text
-docs/product/
-```
+## 1. Clarify, Plan, Recommend
 
-Expected files:
+Do not assume. Do not hide confusion. Surface tradeoffs and recommend clearly.
 
-```text
-docs/product/bucket-0-android-project-setup.md
-docs/product/bucket-1-inventory-recipes-makeability.md
-docs/product/bucket-2-recipe-list-detail-screens.md
-docs/product/bucket-3-inventory-management-screens.md
-docs/product/bucket-4-recipe-editor-custom-recipes.md
-docs/product/bucket-5-recipe-sharing-by-text-message.md
-docs/product/bucket-6-app-settings-and-preferences.md
-```
+Before non-trivial coding:
+- Restate the intended outcome in your own words.
+- State assumptions, constraints, success criteria, and expected impact.
+- Name the files, modules, or behavior you expect to touch.
+- Name nearby areas you plan to leave alone.
+- Give a 2 to 5 step plan. Each step should include how it will be verified.
+- Reject unrequested abstractions, frameworks, compatibility layers, or speculative features before coding.
 
-When working on a bucket:
+Ask before editing when:
+- The request has multiple plausible meanings.
+- The change touches sensitive data, security, auth, billing, persistence, migrations, public APIs, or external contracts.
+- The expected behavior is not defined by nearby code, tests, docs, or the user's request.
+- The request conflicts with existing code, prior requirements, or itself.
+- A decision could cause data loss or broad refactoring.
 
-1. Read this `AGENTS.md`.
-2. Read the requested bucket file.
-3. Read earlier bucket files only as needed for locked decisions and
-   dependencies.
-4. Do not implement later bucket behavior unless the current task says to.
+Proceed without asking when the task is narrow, reversible, and the expected outcome is clear from context.
 
-## Reusable Prompts
+When multiple interpretations or approaches exist:
+- Present the meaningful options with rough costs and tradeoffs.
+- Mark your recommended option.
+- Explain why it fits the current codebase, constraints, and goal.
+- Defer to the user if they choose a different option.
 
-Reusable task prompts should live under:
+## 2. Read Before Writing
 
-```text
-docs/prompts/
-```
+Before adding or changing code, understand the local context. Read the target file, immediate callers and callees, exports, public interfaces, schemas, type definitions, shared utilities, nearby tests, and existing patterns as needed.
 
-Expected prompt files:
+Do not add a new pattern before checking whether the repo already has one.
 
-```text
-docs/prompts/initial-codex-prompt.md
-docs/prompts/reusable-bucket-implementation-prompt.md
-docs/prompts/commit-report-prompt.md
-```
+If code seems oddly structured, assume there may be a reason. Ask or investigate before replacing it.
 
-Use `docs/prompts/reusable-bucket-implementation-prompt.md` when implementing
-one Epic from a bucket.
+## 3. Simplicity and Maintainability
 
-Use `docs/prompts/commit-report-prompt.md` when asked to summarize the current
-diff or generate a suggested commit message without making code changes.
+Use the smallest correct implementation. Nothing speculative.
 
-Do not automatically run the commit report prompt after every task unless the
-current task asks for it. For normal Epic implementation, use the commit-style
-report rules in this file.
+Do not add:
+- Features beyond what was requested.
+- Abstractions for single-use code.
+- Configurability that was not requested.
+- Error handling for impossible states.
+- Compatibility layers without a current need.
+- New dependencies when a small local implementation or existing dependency is enough.
 
-## Checks After Each Epic
+Do preserve:
+- Established patterns that improve long-term maintainability or testability.
+- Security boundaries and necessary validation.
+- Clear naming and direct control flow.
+- Existing public contracts unless the task explicitly changes them.
 
-Run relevant local checks after each Epic:
+After code changes, perform a simplification pass:
+- Remove abstraction, wrappers, dead code, or flexibility introduced by your change that is not needed.
+- Check for duplication introduced by your change.
+- Confirm the code still follows repo conventions and these instructions.
+- Mention what was simplified, or state that no meaningful simplification was needed.
 
-```bash
-./gradlew testDebugUnitTest
-./gradlew assembleDebug
-git diff --check
-```
+Ask: would a senior engineer say this is overcomplicated? If yes, simplify.
 
-On Windows, use the Gradle wrapper equivalents:
+## 4. Surgical Changes
 
-```powershell
-.\gradlew.bat testDebugUnitTest
-.\gradlew.bat assembleDebug
-git diff --check
-```
+Touch only what the task requires. Clean up only your own mess.
 
-If connected Android tests exist and are relevant, run:
+When editing existing code:
+- Do not improve adjacent code, comments, formatting, or names unless required.
+- Do not refactor unrelated code.
+- Match existing style even if you disagree with it.
+- If an existing convention is harmful, mention it and ask before changing direction.
+- If you notice unrelated dead code or bugs, report them instead of fixing them silently.
 
-```bash
-./gradlew connectedDebugAndroidTest
-```
+When your change creates orphans:
+- Remove imports, variables, functions, files, or tests made unused by your change.
+- Do not remove pre-existing dead code unless asked.
 
-If connected tests do not exist or are not relevant, report that clearly.
+Every changed line should trace back to the user's request or to verification required by that request.
 
-## Physical Device Smoke Test
+## 5. Verification Contract
 
-A physical Android device may be connected:
+Define success criteria and loop until verified.
 
-```text
-Device: Pixel 10 Pro
-Developer mode: enabled
-Expected connection: USB debugging through adb
-```
+Turn vague tasks into testable goals:
+- "Add validation" means test invalid inputs, then make them pass.
+- "Fix the bug" means reproduce it with a test or focused check, then make it pass.
+- "Refactor" means preserve behavior and run relevant tests before and after when practical.
 
-Use it for a smoke test after each Epic when available.
+Prefer the narrowest verification that proves the change: focused tests, typecheck, lint, formatter, build, or manual check when automated coverage is unavailable.
 
-Start with:
+Tests should verify intent, not only implementation details. A test that still passes when the business rule is broken is weak.
 
-```bash
-adb devices
-```
+Never claim verification you did not run. Final reports must state:
+- What changed.
+- What was simplified.
+- What verification ran and passed.
+- What was not verified.
+- Any remaining risk.
 
-If the device is listed as `device`, continue.
+If verification fails, report the failure clearly and explain the likely cause if known.
 
-Clear logs:
+## 6. Communication and Uncertainty
 
-```bash
-adb logcat -c
-```
+Say what is known, what is inferred, and what is unknown.
 
-Install the debug build:
+When confidence is low:
+- Use clear uncertainty language near the claim, not only at the end.
+- Name the missing visibility or assumption.
+- Flag claims that need external verification before the user acts on them.
+- Do not use confident tone to cover incomplete knowledge.
 
-```bash
-./gradlew installDebug
-```
+For multi-step tasks:
+- Checkpoint after meaningful phases.
+- Summarize what is done, what is verified, and what remains.
+- If you lose track, stop and restate the current state before continuing.
 
-On Windows, use:
+Fail loud:
+- "Done" is wrong if required work was skipped silently.
+- "Tests pass" is wrong if tests were skipped, filtered unexpectedly, or not run.
+- Report blocked work, partial completion, and skipped steps.
 
-```powershell
-.\gradlew.bat installDebug
-```
+## 7. Documentation and Decisions
 
-Launch the app:
+Code shows what changed. Docs should explain durable decisions.
 
-```bash
-adb shell monkey -p dev.nighthawklabs.homebar -c android.intent.category.LAUNCHER 1
-```
+Update docs when a decision was made between real alternatives, a non-obvious constraint was discovered, or project structure, commands, conventions, or setup changed.
 
-Check the app process:
+Do not document obvious implementation details, duplicate git history, or add docs just in case.
 
-```bash
-adb shell pidof dev.nighthawklabs.homebar
-```
+Use `docs/adr/` for architectural decisions. See `docs/agent/adr-template.md`.
 
-Inspect recent logs for crashes:
+## Optional Reading and Skills
 
-```bash
-adb logcat -d -t 300 | grep -iE "FATAL EXCEPTION|AndroidRuntime|dev.nighthawklabs.homebar"
-```
+Read optional docs only when the task calls for them:
+- `docs/agent/homebar-project-guidance.md`: when working in the Home Bar Android app repo, especially when implementing bucket Epics, changing product behavior, touching Room/DataStore data ownership, recipe makeability, inventory behavior, Android build/test commands, or Pixel smoke testing.
+- `docs/agent/architecture-boundaries.md`: before changing module boundaries, public APIs, database schemas, service layers, dependencies, logging, auth, or cross-cutting infrastructure.
+- `docs/agent/adr-template.md`: when a durable technical decision should be recorded.
+- `docs/agent/llm-runtime-guidance.md`: when implementing code that calls LLMs, agents, classifiers, extractors, routers, retry loops, or deterministic transforms.
 
-If `grep` is unavailable, use an equivalent command or inspect recent logcat
-output manually.
-
-Do not claim a manual UI behavior was verified unless it was actually checked
-on the device AND through an automated test.
-
-If the device is not visible, unauthorized, offline, or unavailable, do not
-block the whole task. Report the exact command output that prevented device
-testing.
-
-## Commit Message and Report Rules
-
-After each Epic, provide a suggested commit message and completion report.
-
-When asked to generate a commit message at any time, base it on the current
-diff. Inspect the diff before writing the message. Do not invent changes that
-are not present.
-
-Use the 50/72 rule:
-
-- Commit subject should be 50 characters or fewer when practical.
-- Wrap body lines at 72 characters when practical.
-- If the bucket or Epic name is long, keep the subject short and put bucket
-  details in the body.
-
-Use conventional commit style for the subject when it fits:
-
-```text
-feat: add recipe ingredient filter
-fix: correct serving quantity scaling
-test: cover substitute matching
-docs: update bucket instructions
-refactor: split recipe matching logic
-```
-
-Do not include absolute file paths in reports or commit messages.
-
-Use file names only in backticks for file lists:
-
-```text
-- `RecipeListViewModel.kt`
-- `RecipeFilterLogicTest.kt`
-```
-
-Do not use full paths like:
-
-```text
-C:\Users\Kevin\Documents\VS-Code-Projects\homebar\app\src\...
-```
-
-If a report section has no entries, write a short explicit line instead of
-omitting important context.
-
-Do not run `git commit` unless explicitly asked. Suggested commit messages are
-for the user to review and copy.
-
-## Review Guidelines
-
-Before finishing a task, check:
-
-- The change matches the requested bucket and Epic.
-- No out-of-scope feature was added.
-- No unnecessary permission was added.
-- Room and DataStore responsibilities are not mixed.
-- Derived recipe match data is recalculated instead of saved as stale state.
-- Unit tests cover domain logic where practical.
-- The app still builds.
-- The connected Pixel smoke test was attempted when available.
-- The completion report is based on the current diff.
-- File lists use file names only, not absolute paths.
+Use available skills when the task matches them:
+- `$commit-report`: use for current diff summaries, suggested commit messages, commit-style completion reports, or final reports based on repository changes.
+- `$long-task-workflow`: use for large multi-file tasks, staged implementations, refactors, migrations, or work that needs a checklist, phased verification, handoff notes, or a structured final report.
