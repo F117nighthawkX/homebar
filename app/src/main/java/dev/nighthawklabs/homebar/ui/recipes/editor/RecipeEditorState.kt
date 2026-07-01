@@ -20,13 +20,38 @@ data class RecipeEditorUiState(
     val tags: String = "",
     val isFavorite: Boolean = false,
     val canSave: Boolean = false,
+    val ingredientOptions: List<RecipeEditorIngredientOption> = emptyList(),
+)
+
+data class RecipeEditorIngredientOption(
+    val id: String,
+    val name: String,
 )
 
 data class RecipeEditorIngredientLineUiState(
+    val ingredientId: String? = null,
     val ingredientName: String = "",
     val unit: String = "",
     val quantity: String = "",
     val note: String = "",
+) {
+    val hasUnit: Boolean
+        get() = unit.isNotBlank()
+}
+
+val RecipeIngredientUnitOptions: List<String> = listOf(
+    "oz",
+    "dash",
+    "barspoon",
+    "tsp",
+    "tbsp",
+    "ml",
+    "drop",
+    "pinch",
+    "wedge",
+    "leaf",
+    "splash",
+    "top",
 )
 
 fun createRecipeEditorUiState(
@@ -44,6 +69,7 @@ fun createRecipeEditorUiState(
             listOf(RecipeIngredient("", 1.0, "oz", ""))
         }.map { ingredient ->
             RecipeEditorIngredientLineUiState(
+                ingredientId = ingredient.ingredientId,
                 ingredientName = ingredientNames[ingredient.ingredientId] ?: ingredient.ingredientId,
                 unit = ingredient.unit,
                 quantity = ingredient.quantity.formatForEditing(),
@@ -59,8 +85,40 @@ fun createRecipeEditorUiState(
     )
 }
 
-fun RecipeEditorUiState.withSaveAvailability(ingredients: List<Ingredient>): RecipeEditorUiState =
-    copy(canSave = toCustomRecipe(existingRecipe = null, ingredients = ingredients, recipeId = "preview", nowMillis = 0L) != null)
+fun RecipeEditorUiState.withIngredientOptionsAndSaveAvailability(
+    ingredients: List<Ingredient>,
+): RecipeEditorUiState = copy(
+    canSave = toCustomRecipe(
+        existingRecipe = null,
+        ingredients = ingredients,
+        recipeId = "preview",
+        nowMillis = 0L,
+    ) != null,
+    ingredientOptions = ingredients.map { ingredient ->
+        RecipeEditorIngredientOption(
+            id = ingredient.id,
+            name = ingredient.name,
+        )
+    },
+)
+
+fun RecipeEditorUiState.addIngredientLine(): RecipeEditorUiState =
+    copy(ingredientLines = ingredientLines + RecipeEditorIngredientLineUiState())
+
+fun RecipeEditorUiState.removeIngredientLine(index: Int): RecipeEditorUiState {
+    if (index !in ingredientLines.indices) return this
+
+    val remainingLines = ingredientLines.filterIndexed { lineIndex, _ -> lineIndex != index }
+    return copy(
+        ingredientLines = remainingLines.ifEmpty { listOf(RecipeEditorIngredientLineUiState()) },
+    )
+}
+
+fun RecipeEditorUiState.moveIngredientLineUp(index: Int): RecipeEditorUiState =
+    moveIngredientLine(fromIndex = index, toIndex = index - 1)
+
+fun RecipeEditorUiState.moveIngredientLineDown(index: Int): RecipeEditorUiState =
+    moveIngredientLine(fromIndex = index, toIndex = index + 1)
 
 fun RecipeEditorUiState.toCustomRecipe(
     existingRecipe: Recipe?,
@@ -97,7 +155,7 @@ fun RecipeEditorUiState.toCustomRecipe(
 private fun RecipeEditorIngredientLineUiState.toRecipeIngredient(
     ingredients: List<Ingredient>,
 ): RecipeIngredient? {
-    val ingredientId = ingredients.idFor(ingredientName.trim()) ?: return null
+    val ingredientId = this.ingredientId ?: ingredients.idFor(ingredientName.trim()) ?: return null
     val trimmedUnit = unit.trim()
     val parsedQuantity = quantity.trim().toDoubleOrNull()
 
@@ -116,6 +174,18 @@ private fun List<Ingredient>.idFor(value: String): String? =
         ingredient.id.equals(value, ignoreCase = true) ||
             ingredient.name.equals(value, ignoreCase = true)
     }?.id
+
+private fun RecipeEditorUiState.moveIngredientLine(
+    fromIndex: Int,
+    toIndex: Int,
+): RecipeEditorUiState {
+    if (fromIndex !in ingredientLines.indices || toIndex !in ingredientLines.indices) return this
+
+    val reorderedLines = ingredientLines.toMutableList()
+    val movedLine = reorderedLines.removeAt(fromIndex)
+    reorderedLines.add(toIndex, movedLine)
+    return copy(ingredientLines = reorderedLines)
+}
 
 private fun String.toTextList(): List<String> =
     split(",")

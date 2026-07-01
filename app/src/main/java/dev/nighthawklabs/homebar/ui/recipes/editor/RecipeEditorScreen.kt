@@ -1,6 +1,7 @@
 package dev.nighthawklabs.homebar.ui.recipes.editor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -21,6 +24,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -110,11 +116,24 @@ private fun RecipeEditorForm(
             IngredientLineEditor(
                 lineNumber = index + 1,
                 ingredient = ingredient,
-                onIngredientNameChange = { viewModel.updateIngredientName(index, it) },
+                ingredientOptions = uiState.ingredientOptions,
+                canMoveUp = index > 0,
+                canMoveDown = index < uiState.ingredientLines.lastIndex,
+                onIngredientSelected = { ingredientId, ingredientName ->
+                    viewModel.updateIngredient(index, ingredientId, ingredientName)
+                },
                 onUnitChange = { viewModel.updateIngredientUnit(index, it) },
                 onQuantityChange = { viewModel.updateIngredientQuantity(index, it) },
                 onNoteChange = { viewModel.updateIngredientNote(index, it) },
+                onRemove = { viewModel.removeIngredientLine(index) },
+                onMoveUp = { viewModel.moveIngredientLineUp(index) },
+                onMoveDown = { viewModel.moveIngredientLineDown(index) },
             )
+        }
+        item {
+            TextButton(onClick = viewModel::addIngredientLine) {
+                Text("Add ingredient line")
+            }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -183,42 +202,124 @@ private fun FavoriteToggle(
 private fun IngredientLineEditor(
     lineNumber: Int,
     ingredient: RecipeEditorIngredientLineUiState,
-    onIngredientNameChange: (String) -> Unit,
+    ingredientOptions: List<RecipeEditorIngredientOption>,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onIngredientSelected: (String, String) -> Unit,
     onUnitChange: (String) -> Unit,
     onQuantityChange: (String) -> Unit,
     onNoteChange: (String) -> Unit,
+    onRemove: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Ingredient $lineNumber", style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(
-            value = ingredient.ingredientName,
-            onValueChange = onIngredientNameChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Ingredient") },
-            singleLine = true,
+        IngredientPicker(
+            selectedIngredientName = ingredient.ingredientName,
+            ingredientOptions = ingredientOptions,
+            onIngredientSelected = onIngredientSelected,
         )
-        OutlinedTextField(
-            value = ingredient.unit,
-            onValueChange = onUnitChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Unit") },
-            singleLine = true,
+        UnitPicker(
+            selectedUnit = ingredient.unit,
+            onUnitSelected = onUnitChange,
         )
-        OutlinedTextField(
-            value = ingredient.quantity,
-            onValueChange = onQuantityChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Quantity") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        )
-        OutlinedTextField(
-            value = ingredient.note,
-            onValueChange = onNoteChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Note") },
-            singleLine = true,
-        )
+        if (ingredient.hasUnit) {
+            OutlinedTextField(
+                value = ingredient.quantity,
+                onValueChange = onQuantityChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Quantity") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            )
+            OutlinedTextField(
+                value = ingredient.note,
+                onValueChange = onNoteChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Note") },
+                singleLine = true,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(
+                enabled = canMoveUp,
+                onClick = onMoveUp,
+            ) {
+                Text("Move up")
+            }
+            TextButton(
+                enabled = canMoveDown,
+                onClick = onMoveDown,
+            ) {
+                Text("Move down")
+            }
+            TextButton(onClick = onRemove) {
+                Text("Remove")
+            }
+        }
+    }
+}
+
+@Composable
+private fun IngredientPicker(
+    selectedIngredientName: String,
+    ingredientOptions: List<RecipeEditorIngredientOption>,
+    onIngredientSelected: (String, String) -> Unit,
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Box {
+        TextButton(onClick = { isExpanded = true }) {
+            Text(selectedIngredientName.ifBlank { "Choose ingredient" })
+        }
+        DropdownMenu(
+            expanded = isExpanded,
+            onDismissRequest = { isExpanded = false },
+        ) {
+            ingredientOptions.forEach { ingredient ->
+                DropdownMenuItem(
+                    text = { Text(ingredient.name) },
+                    onClick = {
+                        isExpanded = false
+                        onIngredientSelected(ingredient.id, ingredient.name)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnitPicker(
+    selectedUnit: String,
+    onUnitSelected: (String) -> Unit,
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val unitOptions = if (selectedUnit.isBlank() || selectedUnit in RecipeIngredientUnitOptions) {
+        RecipeIngredientUnitOptions
+    } else {
+        listOf(selectedUnit) + RecipeIngredientUnitOptions
+    }
+
+    Box {
+        TextButton(onClick = { isExpanded = true }) {
+            Text(selectedUnit.ifBlank { "Choose unit" })
+        }
+        DropdownMenu(
+            expanded = isExpanded,
+            onDismissRequest = { isExpanded = false },
+        ) {
+            unitOptions.forEach { unit ->
+                DropdownMenuItem(
+                    text = { Text(unit) },
+                    onClick = {
+                        isExpanded = false
+                        onUnitSelected(unit)
+                    },
+                )
+            }
+        }
     }
 }
 

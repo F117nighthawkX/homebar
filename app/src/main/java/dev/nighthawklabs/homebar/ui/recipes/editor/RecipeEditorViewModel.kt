@@ -42,7 +42,7 @@ class RecipeEditorViewModel(
         if (state.isLoading || state.isNotFound) {
             state
         } else {
-            state.withSaveAvailability(currentIngredients)
+            state.withIngredientOptionsAndSaveAvailability(currentIngredients)
         }
     }.stateIn(
         scope = viewModelScope,
@@ -74,12 +74,15 @@ class RecipeEditorViewModel(
 
     fun updateBaseServingCount(value: String) = update { copy(baseServingCount = value) }
 
-    fun updateIngredientName(index: Int, value: String) = updateIngredient(index) {
-        copy(ingredientName = value)
+    fun updateIngredient(index: Int, ingredientId: String, ingredientName: String) = updateIngredient(index) {
+        copy(
+            ingredientId = ingredientId,
+            ingredientName = ingredientName,
+        )
     }
 
     fun updateIngredientUnit(index: Int, value: String) = updateIngredient(index) {
-        copy(unit = value)
+        copy(unit = value, quantity = if (unit == value) quantity else "")
     }
 
     fun updateIngredientQuantity(index: Int, value: String) = updateIngredient(index) {
@@ -89,6 +92,14 @@ class RecipeEditorViewModel(
     fun updateIngredientNote(index: Int, value: String) = updateIngredient(index) {
         copy(note = value)
     }
+
+    fun addIngredientLine() = update { addIngredientLine() }
+
+    fun removeIngredientLine(index: Int) = update { removeIngredientLine(index) }
+
+    fun moveIngredientLineUp(index: Int) = update { moveIngredientLineUp(index) }
+
+    fun moveIngredientLineDown(index: Int) = update { moveIngredientLineDown(index) }
 
     fun updateInstructions(value: String) = update { copy(instructions = value) }
 

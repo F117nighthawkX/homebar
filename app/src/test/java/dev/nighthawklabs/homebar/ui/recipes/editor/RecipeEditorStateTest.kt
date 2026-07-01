@@ -13,7 +13,7 @@ import org.junit.Test
 class RecipeEditorStateTest {
     @Test
     fun `blank editor state cannot be saved`() {
-        val state = RecipeEditorUiState().withSaveAvailability(listOf(tequila()))
+        val state = RecipeEditorUiState().withIngredientOptionsAndSaveAvailability(listOf(tequila()))
 
         assertFalse(state.canSave)
         assertNull(state.toCustomRecipe(null, listOf(tequila()), "custom", 100L))
@@ -91,6 +91,70 @@ class RecipeEditorStateTest {
         assertEquals("2", state.ingredientLines.single().quantity)
     }
 
+    @Test
+    fun `adding and removing ingredient lines keeps a blank line available`() {
+        val state = RecipeEditorUiState()
+            .addIngredientLine()
+            .removeIngredientLine(0)
+            .removeIngredientLine(0)
+
+        assertEquals(1, state.ingredientLines.size)
+        assertEquals("", state.ingredientLines.single().ingredientName)
+    }
+
+    @Test
+    fun `moving ingredient lines changes saved order`() {
+        val state = RecipeEditorUiState(
+            name = "Split Base Sour",
+            baseServingCount = "1",
+            ingredientLines = listOf(
+                ingredientLine("tequila", "Tequila"),
+                ingredientLine("rum", "Rum"),
+            ),
+            instructions = "Shake with ice.",
+        ).moveIngredientLineDown(0)
+
+        val recipe = state.toCustomRecipe(
+            existingRecipe = null,
+            ingredients = listOf(tequila(), rum()),
+            recipeId = "split-base-sour",
+            nowMillis = 100L,
+        )
+
+        assertEquals(listOf("rum", "tequila"), recipe?.ingredients?.map { it.ingredientId })
+    }
+
+    @Test
+    fun `empty ingredient lines are not saved`() {
+        val state = RecipeEditorUiState(
+            name = "House Margarita",
+            baseServingCount = "1",
+            ingredientLines = listOf(
+                RecipeEditorIngredientLineUiState(),
+                ingredientLine("tequila", "Tequila"),
+            ),
+            instructions = "Shake with ice.",
+        )
+
+        val recipe = state.toCustomRecipe(
+            existingRecipe = null,
+            ingredients = listOf(tequila()),
+            recipeId = "house-margarita",
+            nowMillis = 100L,
+        )
+
+        assertEquals(listOf("tequila"), recipe?.ingredients?.map { it.ingredientId })
+    }
+
+    @Test
+    fun `quantity is available only after unit selection`() {
+        val blankLine = RecipeEditorIngredientLineUiState(ingredientId = "tequila", ingredientName = "Tequila")
+        val measuredLine = blankLine.copy(unit = "oz")
+
+        assertFalse(blankLine.hasUnit)
+        assertTrue(measuredLine.hasUnit)
+    }
+
     private fun customRecipe() = Recipe(
         id = "custom-margarita",
         name = "Custom Margarita",
@@ -115,5 +179,25 @@ class RecipeEditorStateTest {
         inStock = true,
         runningLow = false,
         notes = "",
+    )
+
+    private fun rum() = Ingredient(
+        id = "rum",
+        name = "Rum",
+        category = IngredientCategory.SPIRIT,
+        inStock = true,
+        runningLow = false,
+        notes = "",
+    )
+
+    private fun ingredientLine(
+        ingredientId: String,
+        ingredientName: String,
+    ) = RecipeEditorIngredientLineUiState(
+        ingredientId = ingredientId,
+        ingredientName = ingredientName,
+        unit = "oz",
+        quantity = "1",
+        note = "",
     )
 }
