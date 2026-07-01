@@ -29,7 +29,6 @@ data class Recipe(
         id = newId,
         name = newName,
         ingredients = ingredients.map { it.copy() },
-        isFavorite = false,
         isCustom = true,
         sourceRecipeId = id,
         createdAt = nowMillis,

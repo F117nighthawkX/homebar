@@ -1,7 +1,6 @@
 package dev.nighthawklabs.homebar.domain.model
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,11 +15,26 @@ class RecipeTest {
         assertEquals("custom-margarita", duplicate.id)
         assertEquals("Margarita Copy", duplicate.name)
         assertTrue(duplicate.isCustom)
-        assertFalse(duplicate.isFavorite)
         assertEquals("margarita", duplicate.sourceRecipeId)
         assertEquals(100L, duplicate.createdAt)
         assertEquals(100L, duplicate.updatedAt)
         assertNotEquals(original.id, duplicate.id)
+    }
+
+    @Test
+    fun `duplicate copies editable recipe fields`() {
+        val original = margarita()
+
+        val duplicate = original.duplicatedAsCustom(newId = "custom-margarita", nowMillis = 100L)
+
+        assertEquals(original.baseServingCount, duplicate.baseServingCount)
+        assertEquals(original.ingredients, duplicate.ingredients)
+        assertEquals(original.instructions, duplicate.instructions)
+        assertEquals(original.glassware, duplicate.glassware)
+        assertEquals(original.tools, duplicate.tools)
+        assertEquals(original.garnish, duplicate.garnish)
+        assertEquals(original.tags, duplicate.tags)
+        assertEquals(original.isFavorite, duplicate.isFavorite)
     }
 
     @Test
