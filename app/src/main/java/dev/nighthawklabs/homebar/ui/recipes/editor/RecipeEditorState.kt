@@ -25,6 +25,7 @@ data class RecipeEditorUiState(
     val isFavorite: Boolean = false,
     val canSave: Boolean = false,
     val ingredientOptions: List<RecipeEditorIngredientOption> = emptyList(),
+    val validation: RecipeEditorValidation = RecipeEditorValidation(),
 )
 
 data class RecipeEditorIngredientOption(
@@ -35,6 +36,28 @@ data class RecipeEditorIngredientOption(
 data class RecipeEditorInstructionStepUiState(
     val text: String = "",
 )
+
+data class RecipeEditorValidation(
+    val nameError: String? = null,
+    val ingredientSectionError: String? = null,
+    val instructionSectionError: String? = null,
+    val ingredientLineErrors: List<RecipeEditorIngredientLineValidation> = emptyList(),
+) {
+    val isValid: Boolean
+        get() = nameError == null &&
+            ingredientSectionError == null &&
+            instructionSectionError == null &&
+            ingredientLineErrors.none(RecipeEditorIngredientLineValidation::hasErrors)
+}
+
+data class RecipeEditorIngredientLineValidation(
+    val ingredientError: String? = null,
+    val unitError: String? = null,
+    val quantityError: String? = null,
+) {
+    val hasErrors: Boolean
+        get() = ingredientError != null || unitError != null || quantityError != null
+}
 
 data class RecipeEditorIngredientLineUiState(
     val ingredientId: String? = null,
@@ -95,20 +118,19 @@ fun createRecipeEditorUiState(
 
 fun RecipeEditorUiState.withIngredientOptionsAndSaveAvailability(
     ingredients: List<Ingredient>,
-): RecipeEditorUiState = copy(
-    canSave = toCustomRecipe(
-        existingRecipe = null,
-        ingredients = ingredients,
-        recipeId = "preview",
-        nowMillis = 0L,
-    ) != null,
-    ingredientOptions = ingredients.map { ingredient ->
-        RecipeEditorIngredientOption(
-            id = ingredient.id,
-            name = ingredient.name,
-        )
-    },
-)
+): RecipeEditorUiState {
+    val validation = validateRecipeEditorState(ingredients)
+    return copy(
+        canSave = validation.isValid && baseServingCount.trim().toIntOrNull()?.let { it >= 1 } == true,
+        ingredientOptions = ingredients.map { ingredient ->
+            RecipeEditorIngredientOption(
+                id = ingredient.id,
+                name = ingredient.name,
+            )
+        },
+        validation = validation,
+    )
+}
 
 fun RecipeEditorUiState.addIngredientLine(): RecipeEditorUiState =
     copy(ingredientLines = ingredientLines + RecipeEditorIngredientLineUiState())
@@ -164,6 +186,23 @@ fun canCreateIngredientOption(
 ): Boolean = searchText.trim().isNotBlank() &&
     filterIngredientOptions(ingredientOptions, searchText).isEmpty()
 
+fun RecipeEditorUiState.validateRecipeEditorState(
+    ingredients: List<Ingredient>,
+): RecipeEditorValidation {
+    val ingredientLineErrors = ingredientLines.map { line ->
+        line.validate(ingredients)
+    }
+    val hasSavedIngredientLine = ingredientLines.any { line -> line.toRecipeIngredient(ingredients) != null }
+    val hasInstructionStep = instructionSteps.any { step -> step.text.isNotBlank() }
+
+    return RecipeEditorValidation(
+        nameError = if (name.isBlank()) "Recipe name is required." else null,
+        ingredientSectionError = if (hasSavedIngredientLine) null else "Add at least one ingredient.",
+        instructionSectionError = if (hasInstructionStep) null else "Add at least one instruction step.",
+        ingredientLineErrors = ingredientLineErrors,
+    )
+}
+
 fun RecipeEditorUiState.toCustomRecipe(
     existingRecipe: Recipe?,
     ingredients: List<Ingredient>,
@@ -174,9 +213,10 @@ fun RecipeEditorUiState.toCustomRecipe(
     val servingCount = baseServingCount.trim().toIntOrNull()
     val recipeIngredients = ingredientLines.mapNotNull { line -> line.toRecipeIngredient(ingredients) }
     val trimmedInstructions = formatInstructionSteps(instructionSteps.map { step -> step.text })
+    val validation = validateRecipeEditorState(ingredients)
 
     if (trimmedName.isBlank() || servingCount == null || servingCount < 1) return null
-    if (recipeIngredients.isEmpty() || trimmedInstructions.isBlank()) return null
+    if (!validation.isValid || recipeIngredients.isEmpty() || trimmedInstructions.isBlank()) return null
 
     return Recipe(
         id = recipeId,
@@ -196,10 +236,26 @@ fun RecipeEditorUiState.toCustomRecipe(
     )
 }
 
+private fun RecipeEditorIngredientLineUiState.validate(
+    ingredients: List<Ingredient>,
+): RecipeEditorIngredientLineValidation {
+    if (isBlankLine()) return RecipeEditorIngredientLineValidation()
+
+    return RecipeEditorIngredientLineValidation(
+        ingredientError = if (resolvedIngredientId(ingredients) == null) "Choose an ingredient." else null,
+        unitError = if (unit.isBlank()) "Choose a unit." else null,
+        quantityError = if (quantity.trim().toDoubleOrNull()?.let { it > 0.0 } == true) {
+            null
+        } else {
+            "Enter a quantity."
+        },
+    )
+}
+
 private fun RecipeEditorIngredientLineUiState.toRecipeIngredient(
     ingredients: List<Ingredient>,
 ): RecipeIngredient? {
-    val ingredientId = this.ingredientId ?: ingredients.idFor(ingredientName.trim()) ?: return null
+    val ingredientId = resolvedIngredientId(ingredients) ?: return null
     val trimmedUnit = unit.trim()
     val parsedQuantity = quantity.trim().toDoubleOrNull()
 
@@ -212,6 +268,17 @@ private fun RecipeEditorIngredientLineUiState.toRecipeIngredient(
         note = note.trim(),
     )
 }
+
+private fun RecipeEditorIngredientLineUiState.resolvedIngredientId(
+    ingredients: List<Ingredient>,
+): String? = ingredientId ?: ingredients.idFor(ingredientName.trim())
+
+private fun RecipeEditorIngredientLineUiState.isBlankLine(): Boolean =
+    ingredientId == null &&
+        ingredientName.isBlank() &&
+        unit.isBlank() &&
+        quantity.isBlank() &&
+        note.isBlank()
 
 private fun List<Ingredient>.idFor(value: String): String? =
     firstOrNull { ingredient ->

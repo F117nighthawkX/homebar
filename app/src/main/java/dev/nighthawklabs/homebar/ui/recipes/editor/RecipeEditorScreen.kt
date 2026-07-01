@@ -98,6 +98,12 @@ private fun RecipeEditorForm(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Recipe name") },
                     singleLine = true,
+                    isError = uiState.validation.nameError != null,
+                    supportingText = {
+                        uiState.validation.nameError?.let { message ->
+                            Text(message)
+                        }
+                    },
                 )
                 OutlinedTextField(
                     value = uiState.baseServingCount,
@@ -113,11 +119,20 @@ private fun RecipeEditorForm(
                 )
             }
         }
-        item { SectionTitle("Ingredients") }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SectionTitle("Ingredients")
+                uiState.validation.ingredientSectionError?.let { message ->
+                    ValidationMessage(message)
+                }
+            }
+        }
         itemsIndexed(uiState.ingredientLines) { index, ingredient ->
             IngredientLineEditor(
                 lineNumber = index + 1,
                 ingredient = ingredient,
+                validation = uiState.validation.ingredientLineErrors.getOrNull(index)
+                    ?: RecipeEditorIngredientLineValidation(),
                 ingredientOptions = uiState.ingredientOptions,
                 canMoveUp = index > 0,
                 canMoveDown = index < uiState.ingredientLines.lastIndex,
@@ -144,7 +159,12 @@ private fun RecipeEditorForm(
             }
         }
         item {
-            SectionTitle("Instructions")
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SectionTitle("Instructions")
+                uiState.validation.instructionSectionError?.let { message ->
+                    ValidationMessage(message)
+                }
+            }
         }
         itemsIndexed(uiState.instructionSteps) { index, step ->
             InstructionStepEditor(
@@ -257,6 +277,7 @@ private fun FavoriteToggle(
 private fun IngredientLineEditor(
     lineNumber: Int,
     ingredient: RecipeEditorIngredientLineUiState,
+    validation: RecipeEditorIngredientLineValidation,
     ingredientOptions: List<RecipeEditorIngredientOption>,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -278,10 +299,12 @@ private fun IngredientLineEditor(
             onIngredientSelected = onIngredientSelected,
             onIngredientSearchTextChange = onIngredientSearchTextChange,
             onCreateIngredient = onCreateIngredient,
+            errorMessage = validation.ingredientError,
         )
         UnitPicker(
             selectedUnit = ingredient.unit,
             onUnitSelected = onUnitChange,
+            errorMessage = validation.unitError,
         )
         if (ingredient.hasUnit) {
             OutlinedTextField(
@@ -291,6 +314,12 @@ private fun IngredientLineEditor(
                 label = { Text("Quantity") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                isError = validation.quantityError != null,
+                supportingText = {
+                    validation.quantityError?.let { message ->
+                        Text(message)
+                    }
+                },
             )
             OutlinedTextField(
                 value = ingredient.note,
@@ -327,6 +356,7 @@ private fun IngredientPicker(
     onIngredientSelected: (String, String) -> Unit,
     onIngredientSearchTextChange: (String) -> Unit,
     onCreateIngredient: (String, IngredientCategory) -> Unit,
+    errorMessage: String?,
 ) {
     var searchText by remember(selectedIngredientName) { mutableStateOf(selectedIngredientName) }
     var quickCreateName by remember { mutableStateOf<String?>(null) }
@@ -346,6 +376,12 @@ private fun IngredientPicker(
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Search ingredients") },
             singleLine = true,
+            isError = errorMessage != null,
+            supportingText = {
+                errorMessage?.let { message ->
+                    Text(message)
+                }
+            },
         )
         if (searchText.isNotBlank()) {
             matchingIngredients.forEach { ingredient ->
@@ -453,6 +489,7 @@ private fun CategoryPicker(
 private fun UnitPicker(
     selectedUnit: String,
     onUnitSelected: (String) -> Unit,
+    errorMessage: String?,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val unitOptions = if (selectedUnit.isBlank() || selectedUnit in RecipeIngredientUnitOptions) {
@@ -462,8 +499,13 @@ private fun UnitPicker(
     }
 
     Box {
-        TextButton(onClick = { isExpanded = true }) {
-            Text(selectedUnit.ifBlank { "Choose unit" })
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = { isExpanded = true }) {
+                Text(selectedUnit.ifBlank { "Choose unit" })
+            }
+            errorMessage?.let { message ->
+                ValidationMessage(message)
+            }
         }
         DropdownMenu(
             expanded = isExpanded,
@@ -500,6 +542,14 @@ private fun EditorMessage(
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.headlineSmall)
+}
+
+@Composable
+private fun ValidationMessage(message: String) {
+    Text(
+        text = message,
+        color = MaterialTheme.colorScheme.error,
+    )
 }
 
 private fun categoryLabel(category: IngredientCategory): String = when (category) {

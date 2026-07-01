@@ -17,6 +17,9 @@ class RecipeEditorStateTest {
 
         assertFalse(state.canSave)
         assertNull(state.toCustomRecipe(null, listOf(tequila()), "custom", 100L))
+        assertEquals("Recipe name is required.", state.validation.nameError)
+        assertEquals("Add at least one ingredient.", state.validation.ingredientSectionError)
+        assertEquals("Add at least one instruction step.", state.validation.instructionSectionError)
     }
 
     @Test
@@ -61,6 +64,18 @@ class RecipeEditorStateTest {
         assertNull(recipe?.sourceRecipeId)
         assertEquals(100L, recipe?.createdAt)
         assertEquals(100L, recipe?.updatedAt)
+    }
+
+    @Test
+    fun `valid editor state has no validation messages`() {
+        val state = validEditorState().withIngredientOptionsAndSaveAvailability(listOf(tequila()))
+
+        assertTrue(state.canSave)
+        assertTrue(state.validation.isValid)
+        assertNull(state.validation.nameError)
+        assertNull(state.validation.ingredientSectionError)
+        assertNull(state.validation.instructionSectionError)
+        assertFalse(state.validation.ingredientLineErrors.single().hasErrors)
     }
 
     @Test
@@ -166,6 +181,58 @@ class RecipeEditorStateTest {
         )
 
         assertEquals(listOf("tequila"), recipe?.ingredients?.map { it.ingredientId })
+    }
+
+    @Test
+    fun `partially filled ingredient lines expose field validation messages`() {
+        val state = RecipeEditorUiState(
+            name = "House Margarita",
+            baseServingCount = "1",
+            ingredientLines = listOf(
+                RecipeEditorIngredientLineUiState(
+                    ingredientName = "Unknown ingredient",
+                    unit = "",
+                    quantity = "",
+                ),
+            ),
+            instructionSteps = listOf(RecipeEditorInstructionStepUiState("Shake with ice.")),
+        ).withIngredientOptionsAndSaveAvailability(listOf(tequila()))
+
+        val lineError = state.validation.ingredientLineErrors.single()
+        assertFalse(state.canSave)
+        assertEquals("Add at least one ingredient.", state.validation.ingredientSectionError)
+        assertEquals("Choose an ingredient.", lineError.ingredientError)
+        assertEquals("Choose a unit.", lineError.unitError)
+        assertEquals("Enter a quantity.", lineError.quantityError)
+    }
+
+    @Test
+    fun `invalid ingredient lines block save even when another line is valid`() {
+        val state = RecipeEditorUiState(
+            name = "House Margarita",
+            baseServingCount = "1",
+            ingredientLines = listOf(
+                ingredientLine("tequila", "Tequila"),
+                RecipeEditorIngredientLineUiState(
+                    ingredientName = "Rum",
+                    unit = "oz",
+                    quantity = "",
+                ),
+            ),
+            instructionSteps = listOf(RecipeEditorInstructionStepUiState("Shake with ice.")),
+        ).withIngredientOptionsAndSaveAvailability(listOf(tequila(), rum()))
+
+        val recipe = state.toCustomRecipe(
+            existingRecipe = null,
+            ingredients = listOf(tequila(), rum()),
+            recipeId = "house-margarita",
+            nowMillis = 100L,
+        )
+
+        assertFalse(state.canSave)
+        assertNull(recipe)
+        assertNull(state.validation.ingredientSectionError)
+        assertEquals("Enter a quantity.", state.validation.ingredientLineErrors[1].quantityError)
     }
 
     @Test
@@ -300,6 +367,13 @@ class RecipeEditorStateTest {
         inStock = true,
         runningLow = false,
         notes = "",
+    )
+
+    private fun validEditorState() = RecipeEditorUiState(
+        name = "House Margarita",
+        baseServingCount = "1",
+        ingredientLines = listOf(ingredientLine("tequila", "Tequila")),
+        instructionSteps = listOf(RecipeEditorInstructionStepUiState("Shake with ice.")),
     )
 
     private fun ingredientLine(
