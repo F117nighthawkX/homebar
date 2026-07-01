@@ -15,6 +15,9 @@ interface IngredientDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(ingredients: List<IngredientEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(ingredient: IngredientEntity)
+
     @Query(
         "UPDATE ingredients SET inStock = :inStock, " +
             "runningLow = CASE WHEN :inStock THEN runningLow ELSE 0 END " +

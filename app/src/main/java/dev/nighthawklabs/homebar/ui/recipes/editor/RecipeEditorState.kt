@@ -120,6 +120,24 @@ fun RecipeEditorUiState.moveIngredientLineUp(index: Int): RecipeEditorUiState =
 fun RecipeEditorUiState.moveIngredientLineDown(index: Int): RecipeEditorUiState =
     moveIngredientLine(fromIndex = index, toIndex = index + 1)
 
+fun filterIngredientOptions(
+    ingredientOptions: List<RecipeEditorIngredientOption>,
+    searchText: String,
+): List<RecipeEditorIngredientOption> {
+    val trimmedSearchText = searchText.trim()
+    if (trimmedSearchText.isBlank()) return ingredientOptions
+
+    return ingredientOptions.filter { ingredient ->
+        ingredient.name.contains(trimmedSearchText, ignoreCase = true)
+    }
+}
+
+fun canCreateIngredientOption(
+    ingredientOptions: List<RecipeEditorIngredientOption>,
+    searchText: String,
+): Boolean = searchText.trim().isNotBlank() &&
+    filterIngredientOptions(ingredientOptions, searchText).isEmpty()
+
 fun RecipeEditorUiState.toCustomRecipe(
     existingRecipe: Recipe?,
     ingredients: List<Ingredient>,

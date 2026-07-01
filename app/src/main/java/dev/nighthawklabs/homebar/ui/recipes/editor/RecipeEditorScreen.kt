@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.nighthawklabs.homebar.domain.model.IngredientCategory
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,6 +124,12 @@ private fun RecipeEditorForm(
                 onIngredientSelected = { ingredientId, ingredientName ->
                     viewModel.updateIngredient(index, ingredientId, ingredientName)
                 },
+                onIngredientSearchTextChange = { ingredientName ->
+                    viewModel.updateIngredientSearchText(index, ingredientName)
+                },
+                onCreateIngredient = { ingredientName, category ->
+                    viewModel.createIngredientForLine(index, ingredientName, category)
+                },
                 onUnitChange = { viewModel.updateIngredientUnit(index, it) },
                 onQuantityChange = { viewModel.updateIngredientQuantity(index, it) },
                 onNoteChange = { viewModel.updateIngredientNote(index, it) },
@@ -206,6 +214,8 @@ private fun IngredientLineEditor(
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     onIngredientSelected: (String, String) -> Unit,
+    onIngredientSearchTextChange: (String) -> Unit,
+    onCreateIngredient: (String, IngredientCategory) -> Unit,
     onUnitChange: (String) -> Unit,
     onQuantityChange: (String) -> Unit,
     onNoteChange: (String) -> Unit,
@@ -219,6 +229,8 @@ private fun IngredientLineEditor(
             selectedIngredientName = ingredient.ingredientName,
             ingredientOptions = ingredientOptions,
             onIngredientSelected = onIngredientSelected,
+            onIngredientSearchTextChange = onIngredientSearchTextChange,
+            onCreateIngredient = onCreateIngredient,
         )
         UnitPicker(
             selectedUnit = ingredient.unit,
@@ -266,23 +278,123 @@ private fun IngredientPicker(
     selectedIngredientName: String,
     ingredientOptions: List<RecipeEditorIngredientOption>,
     onIngredientSelected: (String, String) -> Unit,
+    onIngredientSearchTextChange: (String) -> Unit,
+    onCreateIngredient: (String, IngredientCategory) -> Unit,
+) {
+    var searchText by remember(selectedIngredientName) { mutableStateOf(selectedIngredientName) }
+    var quickCreateName by remember { mutableStateOf<String?>(null) }
+    val matchingIngredients = filterIngredientOptions(ingredientOptions, searchText)
+    val canCreateIngredient = canCreateIngredientOption(ingredientOptions, searchText)
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        OutlinedTextField(
+            value = searchText,
+            onValueChange = { value ->
+                searchText = value
+                onIngredientSearchTextChange(value)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Search ingredients") },
+            singleLine = true,
+        )
+        if (searchText.isNotBlank()) {
+            matchingIngredients.forEach { ingredient ->
+                TextButton(
+                    onClick = {
+                        searchText = ingredient.name
+                        onIngredientSelected(ingredient.id, ingredient.name)
+                    },
+                ) {
+                    Text(ingredient.name)
+                }
+            }
+            if (canCreateIngredient) {
+                TextButton(onClick = { quickCreateName = searchText.trim() }) {
+                    Text("Create ingredient")
+                }
+            }
+        }
+    }
+
+    quickCreateName?.let { initialName ->
+        CreateIngredientDialog(
+            initialName = initialName,
+            onDismiss = { quickCreateName = null },
+            onCreate = { name, category ->
+                quickCreateName = null
+                onCreateIngredient(name, category)
+            },
+        )
+    }
+}
+
+@Composable
+private fun CreateIngredientDialog(
+    initialName: String,
+    onDismiss: () -> Unit,
+    onCreate: (String, IngredientCategory) -> Unit,
+) {
+    var name by remember(initialName) { mutableStateOf(initialName) }
+    var category by remember { mutableStateOf(IngredientCategory.OTHER) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create ingredient") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Ingredient name") },
+                    singleLine = true,
+                )
+                CategoryPicker(
+                    selectedCategory = category,
+                    onCategorySelected = { category = it },
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = name.trim().isNotBlank(),
+                onClick = { onCreate(name, category) },
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun CategoryPicker(
+    selectedCategory: IngredientCategory,
+    onCategorySelected: (IngredientCategory) -> Unit,
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
     Box {
         TextButton(onClick = { isExpanded = true }) {
-            Text(selectedIngredientName.ifBlank { "Choose ingredient" })
+            Text(categoryLabel(selectedCategory))
         }
         DropdownMenu(
             expanded = isExpanded,
             onDismissRequest = { isExpanded = false },
         ) {
-            ingredientOptions.forEach { ingredient ->
+            IngredientCategory.entries.forEach { category ->
                 DropdownMenuItem(
-                    text = { Text(ingredient.name) },
+                    text = { Text(categoryLabel(category)) },
                     onClick = {
                         isExpanded = false
-                        onIngredientSelected(ingredient.id, ingredient.name)
+                        onCategorySelected(category)
                     },
                 )
             }
@@ -341,4 +453,15 @@ private fun EditorMessage(
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = MaterialTheme.typography.headlineSmall)
+}
+
+private fun categoryLabel(category: IngredientCategory): String = when (category) {
+    IngredientCategory.SPIRIT -> "Spirit"
+    IngredientCategory.LIQUEUR -> "Liqueur"
+    IngredientCategory.MIXER -> "Mixer"
+    IngredientCategory.JUICE -> "Juice"
+    IngredientCategory.SYRUP -> "Syrup"
+    IngredientCategory.BITTERS -> "Bitters"
+    IngredientCategory.GARNISH -> "Garnish"
+    IngredientCategory.OTHER -> "Other"
 }

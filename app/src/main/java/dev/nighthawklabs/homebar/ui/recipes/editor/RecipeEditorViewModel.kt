@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dev.nighthawklabs.homebar.HomeBarApplication
 import dev.nighthawklabs.homebar.data.repository.IngredientRepository
 import dev.nighthawklabs.homebar.data.repository.RecipeRepository
+import dev.nighthawklabs.homebar.domain.model.IngredientCategory
 import dev.nighthawklabs.homebar.domain.model.Recipe
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
 class RecipeEditorViewModel(
     application: Application,
     private val recipeRepository: RecipeRepository,
-    ingredientRepository: IngredientRepository,
+    private val ingredientRepository: IngredientRepository,
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : AndroidViewModel(application) {
     constructor(application: Application) : this(
@@ -81,6 +82,13 @@ class RecipeEditorViewModel(
         )
     }
 
+    fun updateIngredientSearchText(index: Int, ingredientName: String) = updateIngredient(index) {
+        copy(
+            ingredientId = null,
+            ingredientName = ingredientName,
+        )
+    }
+
     fun updateIngredientUnit(index: Int, value: String) = updateIngredient(index) {
         copy(unit = value, quantity = if (unit == value) quantity else "")
     }
@@ -100,6 +108,20 @@ class RecipeEditorViewModel(
     fun moveIngredientLineUp(index: Int) = update { moveIngredientLineUp(index) }
 
     fun moveIngredientLineDown(index: Int) = update { moveIngredientLineDown(index) }
+
+    fun createIngredientForLine(
+        index: Int,
+        name: String,
+        category: IngredientCategory,
+    ) {
+        val trimmedName = name.trim()
+        if (trimmedName.isBlank()) return
+
+        viewModelScope.launch {
+            val ingredient = ingredientRepository.createIngredient(trimmedName, category)
+            updateIngredient(index, ingredient.id, ingredient.name)
+        }
+    }
 
     fun updateInstructions(value: String) = update { copy(instructions = value) }
 

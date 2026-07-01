@@ -155,6 +155,41 @@ class RecipeEditorStateTest {
         assertTrue(measuredLine.hasUnit)
     }
 
+    @Test
+    fun `ingredient option search matches existing ingredients by partial name`() {
+        val options = listOf(
+            RecipeEditorIngredientOption(id = "tequila", name = "Tequila"),
+            RecipeEditorIngredientOption(id = "lime-juice", name = "Lime Juice"),
+        )
+
+        val matches = filterIngredientOptions(options, " lime ")
+
+        assertEquals(listOf("Lime Juice"), matches.map { it.name })
+    }
+
+    @Test
+    fun `ingredient option search is case insensitive`() {
+        val options = listOf(
+            RecipeEditorIngredientOption(id = "angostura-bitters", name = "Angostura Bitters"),
+            RecipeEditorIngredientOption(id = "orange-bitters", name = "Orange Bitters"),
+        )
+
+        val matches = filterIngredientOptions(options, "BITTERS")
+
+        assertEquals(listOf("Angostura Bitters", "Orange Bitters"), matches.map { it.name })
+    }
+
+    @Test
+    fun `ingredient quick create is available only when search has no matches`() {
+        val options = listOf(
+            RecipeEditorIngredientOption(id = "tequila", name = "Tequila"),
+        )
+
+        assertFalse(canCreateIngredientOption(options, ""))
+        assertFalse(canCreateIngredientOption(options, "teq"))
+        assertTrue(canCreateIngredientOption(options, "Mezcal"))
+    }
+
     private fun customRecipe() = Recipe(
         id = "custom-margarita",
         name = "Custom Margarita",
