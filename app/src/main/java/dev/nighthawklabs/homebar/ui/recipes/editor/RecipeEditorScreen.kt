@@ -144,15 +144,23 @@ private fun RecipeEditorForm(
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionTitle("Instructions")
-                OutlinedTextField(
-                    value = uiState.instructions,
-                    onValueChange = viewModel::updateInstructions,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Instructions") },
-                    minLines = 4,
-                )
+            SectionTitle("Instructions")
+        }
+        itemsIndexed(uiState.instructionSteps) { index, step ->
+            InstructionStepEditor(
+                stepNumber = index + 1,
+                step = step,
+                canMoveUp = index > 0,
+                canMoveDown = index < uiState.instructionSteps.lastIndex,
+                onTextChange = { viewModel.updateInstructionStep(index, it) },
+                onRemove = { viewModel.removeInstructionStep(index) },
+                onMoveUp = { viewModel.moveInstructionStepUp(index) },
+                onMoveDown = { viewModel.moveInstructionStepDown(index) },
+            )
+        }
+        item {
+            TextButton(onClick = viewModel::addInstructionStep) {
+                Text("Add instruction step")
             }
         }
         item {
@@ -183,6 +191,45 @@ private fun RecipeEditorForm(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Tags") },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InstructionStepEditor(
+    stepNumber: Int,
+    step: RecipeEditorInstructionStepUiState,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onTextChange: (String) -> Unit,
+    onRemove: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = step.text,
+            onValueChange = onTextChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Step $stepNumber") },
+            minLines = 2,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(
+                enabled = canMoveUp,
+                onClick = onMoveUp,
+            ) {
+                Text("Move up")
+            }
+            TextButton(
+                enabled = canMoveDown,
+                onClick = onMoveDown,
+            ) {
+                Text("Move down")
+            }
+            TextButton(onClick = onRemove) {
+                Text("Remove")
             }
         }
     }

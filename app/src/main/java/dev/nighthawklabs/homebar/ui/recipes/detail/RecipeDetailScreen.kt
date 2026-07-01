@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.nighthawklabs.homebar.domain.logic.parseInstructionSteps
 import dev.nighthawklabs.homebar.domain.model.RecipeMatchStatus
 import java.math.BigDecimal
 
@@ -151,9 +152,16 @@ fun RecipeDetailScreen(
                     }
                 }
                 item {
+                    val instructionSteps = parseInstructionSteps(recipe.instructions)
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         SectionTitle("Instructions")
-                        Text(recipe.instructions)
+                        if (instructionSteps.isEmpty()) {
+                            Text(recipe.instructions)
+                        } else {
+                            instructionSteps.forEachIndexed { index, step ->
+                                Text("${index + 1}. $step")
+                            }
+                        }
                     }
                 }
                 item { DetailListSection("Glassware", listOf(recipe.glassware)) }

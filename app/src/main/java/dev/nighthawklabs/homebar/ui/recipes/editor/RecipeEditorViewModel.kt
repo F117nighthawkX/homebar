@@ -109,6 +109,18 @@ class RecipeEditorViewModel(
 
     fun moveIngredientLineDown(index: Int) = update { moveIngredientLineDown(index) }
 
+    fun updateInstructionStep(index: Int, value: String) = updateInstructionStep(index) {
+        copy(text = value)
+    }
+
+    fun addInstructionStep() = update { addInstructionStep() }
+
+    fun removeInstructionStep(index: Int) = update { removeInstructionStep(index) }
+
+    fun moveInstructionStepUp(index: Int) = update { moveInstructionStepUp(index) }
+
+    fun moveInstructionStepDown(index: Int) = update { moveInstructionStepDown(index) }
+
     fun createIngredientForLine(
         index: Int,
         name: String,
@@ -122,8 +134,6 @@ class RecipeEditorViewModel(
             updateIngredient(index, ingredient.id, ingredient.name)
         }
     }
-
-    fun updateInstructions(value: String) = update { copy(instructions = value) }
 
     fun updateGlassware(value: String) = update { copy(glassware = value) }
 
@@ -172,6 +182,19 @@ class RecipeEditorViewModel(
             copy(
                 ingredientLines = ingredientLines.mapIndexed { lineIndex, line ->
                     if (lineIndex == index) line.transform() else line
+                },
+            )
+        }
+    }
+
+    private fun updateInstructionStep(
+        index: Int,
+        transform: RecipeEditorInstructionStepUiState.() -> RecipeEditorInstructionStepUiState,
+    ) {
+        update {
+            copy(
+                instructionSteps = instructionSteps.mapIndexed { stepIndex, step ->
+                    if (stepIndex == index) step.transform() else step
                 },
             )
         }

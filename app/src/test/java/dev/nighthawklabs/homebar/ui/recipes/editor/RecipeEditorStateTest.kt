@@ -32,7 +32,9 @@ class RecipeEditorStateTest {
                     note = "blanco",
                 ),
             ),
-            instructions = "Shake with ice.",
+            instructionSteps = listOf(
+                RecipeEditorInstructionStepUiState("Shake with ice."),
+            ),
             glassware = "Rocks glass",
             tools = "Shaker, Jigger",
             garnish = "Lime wheel",
@@ -66,7 +68,9 @@ class RecipeEditorStateTest {
         val existingRecipe = customRecipe()
         val state = createRecipeEditorUiState(existingRecipe, listOf(tequila())).copy(
             name = "Spicy Margarita",
-            instructions = "Shake hard.",
+            instructionSteps = listOf(
+                RecipeEditorInstructionStepUiState("Shake hard."),
+            ),
         )
 
         val recipe = state.toCustomRecipe(
@@ -92,6 +96,24 @@ class RecipeEditorStateTest {
     }
 
     @Test
+    fun `editor state exposes existing instructions as ordered steps`() {
+        val recipe = customRecipe().copy(
+            instructions = "Add tequila and lime juice.\nShake with ice.\nStrain into a rocks glass.",
+        )
+
+        val state = createRecipeEditorUiState(recipe, listOf(tequila()))
+
+        assertEquals(
+            listOf(
+                "Add tequila and lime juice.",
+                "Shake with ice.",
+                "Strain into a rocks glass.",
+            ),
+            state.instructionSteps.map { it.text },
+        )
+    }
+
+    @Test
     fun `adding and removing ingredient lines keeps a blank line available`() {
         val state = RecipeEditorUiState()
             .addIngredientLine()
@@ -111,7 +133,7 @@ class RecipeEditorStateTest {
                 ingredientLine("tequila", "Tequila"),
                 ingredientLine("rum", "Rum"),
             ),
-            instructions = "Shake with ice.",
+            instructionSteps = listOf(RecipeEditorInstructionStepUiState("Shake with ice.")),
         ).moveIngredientLineDown(0)
 
         val recipe = state.toCustomRecipe(
@@ -133,7 +155,7 @@ class RecipeEditorStateTest {
                 RecipeEditorIngredientLineUiState(),
                 ingredientLine("tequila", "Tequila"),
             ),
-            instructions = "Shake with ice.",
+            instructionSteps = listOf(RecipeEditorInstructionStepUiState("Shake with ice.")),
         )
 
         val recipe = state.toCustomRecipe(
@@ -144,6 +166,61 @@ class RecipeEditorStateTest {
         )
 
         assertEquals(listOf("tequila"), recipe?.ingredients?.map { it.ingredientId })
+    }
+
+    @Test
+    fun `moving instruction steps changes saved order`() {
+        val state = RecipeEditorUiState(
+            name = "House Margarita",
+            baseServingCount = "1",
+            ingredientLines = listOf(ingredientLine("tequila", "Tequila")),
+            instructionSteps = listOf(
+                RecipeEditorInstructionStepUiState("Shake with ice."),
+                RecipeEditorInstructionStepUiState("Strain over fresh ice."),
+            ),
+        ).moveInstructionStepDown(0)
+
+        val recipe = state.toCustomRecipe(
+            existingRecipe = null,
+            ingredients = listOf(tequila()),
+            recipeId = "house-margarita",
+            nowMillis = 100L,
+        )
+
+        assertEquals("Strain over fresh ice.\nShake with ice.", recipe?.instructions)
+    }
+
+    @Test
+    fun `empty instruction steps are not saved`() {
+        val state = RecipeEditorUiState(
+            name = "House Margarita",
+            baseServingCount = "1",
+            ingredientLines = listOf(ingredientLine("tequila", "Tequila")),
+            instructionSteps = listOf(
+                RecipeEditorInstructionStepUiState(),
+                RecipeEditorInstructionStepUiState("Shake with ice."),
+            ),
+        )
+
+        val recipe = state.toCustomRecipe(
+            existingRecipe = null,
+            ingredients = listOf(tequila()),
+            recipeId = "house-margarita",
+            nowMillis = 100L,
+        )
+
+        assertEquals("Shake with ice.", recipe?.instructions)
+    }
+
+    @Test
+    fun `adding and removing instruction steps keeps a blank step available`() {
+        val state = RecipeEditorUiState()
+            .addInstructionStep()
+            .removeInstructionStep(0)
+            .removeInstructionStep(0)
+
+        assertEquals(1, state.instructionSteps.size)
+        assertEquals("", state.instructionSteps.single().text)
     }
 
     @Test

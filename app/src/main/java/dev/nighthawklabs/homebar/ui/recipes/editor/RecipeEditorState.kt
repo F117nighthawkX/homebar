@@ -1,5 +1,7 @@
 package dev.nighthawklabs.homebar.ui.recipes.editor
 
+import dev.nighthawklabs.homebar.domain.logic.formatInstructionSteps
+import dev.nighthawklabs.homebar.domain.logic.parseInstructionSteps
 import dev.nighthawklabs.homebar.domain.model.Ingredient
 import dev.nighthawklabs.homebar.domain.model.Recipe
 import dev.nighthawklabs.homebar.domain.model.RecipeIngredient
@@ -13,7 +15,9 @@ data class RecipeEditorUiState(
     val ingredientLines: List<RecipeEditorIngredientLineUiState> = listOf(
         RecipeEditorIngredientLineUiState(),
     ),
-    val instructions: String = "",
+    val instructionSteps: List<RecipeEditorInstructionStepUiState> = listOf(
+        RecipeEditorInstructionStepUiState(),
+    ),
     val glassware: String = "",
     val tools: String = "",
     val garnish: String = "",
@@ -26,6 +30,10 @@ data class RecipeEditorUiState(
 data class RecipeEditorIngredientOption(
     val id: String,
     val name: String,
+)
+
+data class RecipeEditorInstructionStepUiState(
+    val text: String = "",
 )
 
 data class RecipeEditorIngredientLineUiState(
@@ -76,7 +84,7 @@ fun createRecipeEditorUiState(
                 note = ingredient.note,
             )
         },
-        instructions = recipe.instructions,
+        instructionSteps = recipe.instructions.toInstructionStepUiStates(),
         glassware = recipe.glassware,
         tools = recipe.tools.joinToString(),
         garnish = recipe.garnish.joinToString(),
@@ -120,6 +128,24 @@ fun RecipeEditorUiState.moveIngredientLineUp(index: Int): RecipeEditorUiState =
 fun RecipeEditorUiState.moveIngredientLineDown(index: Int): RecipeEditorUiState =
     moveIngredientLine(fromIndex = index, toIndex = index + 1)
 
+fun RecipeEditorUiState.addInstructionStep(): RecipeEditorUiState =
+    copy(instructionSteps = instructionSteps + RecipeEditorInstructionStepUiState())
+
+fun RecipeEditorUiState.removeInstructionStep(index: Int): RecipeEditorUiState {
+    if (index !in instructionSteps.indices) return this
+
+    val remainingSteps = instructionSteps.filterIndexed { stepIndex, _ -> stepIndex != index }
+    return copy(
+        instructionSteps = remainingSteps.ifEmpty { listOf(RecipeEditorInstructionStepUiState()) },
+    )
+}
+
+fun RecipeEditorUiState.moveInstructionStepUp(index: Int): RecipeEditorUiState =
+    moveInstructionStep(fromIndex = index, toIndex = index - 1)
+
+fun RecipeEditorUiState.moveInstructionStepDown(index: Int): RecipeEditorUiState =
+    moveInstructionStep(fromIndex = index, toIndex = index + 1)
+
 fun filterIngredientOptions(
     ingredientOptions: List<RecipeEditorIngredientOption>,
     searchText: String,
@@ -147,7 +173,7 @@ fun RecipeEditorUiState.toCustomRecipe(
     val trimmedName = name.trim()
     val servingCount = baseServingCount.trim().toIntOrNull()
     val recipeIngredients = ingredientLines.mapNotNull { line -> line.toRecipeIngredient(ingredients) }
-    val trimmedInstructions = instructions.trim()
+    val trimmedInstructions = formatInstructionSteps(instructionSteps.map { step -> step.text })
 
     if (trimmedName.isBlank() || servingCount == null || servingCount < 1) return null
     if (recipeIngredients.isEmpty() || trimmedInstructions.isBlank()) return null
@@ -204,6 +230,23 @@ private fun RecipeEditorUiState.moveIngredientLine(
     reorderedLines.add(toIndex, movedLine)
     return copy(ingredientLines = reorderedLines)
 }
+
+private fun RecipeEditorUiState.moveInstructionStep(
+    fromIndex: Int,
+    toIndex: Int,
+): RecipeEditorUiState {
+    if (fromIndex !in instructionSteps.indices || toIndex !in instructionSteps.indices) return this
+
+    val reorderedSteps = instructionSteps.toMutableList()
+    val movedStep = reorderedSteps.removeAt(fromIndex)
+    reorderedSteps.add(toIndex, movedStep)
+    return copy(instructionSteps = reorderedSteps)
+}
+
+private fun String.toInstructionStepUiStates(): List<RecipeEditorInstructionStepUiState> =
+    parseInstructionSteps(this)
+        .map { step -> RecipeEditorInstructionStepUiState(step) }
+        .ifEmpty { listOf(RecipeEditorInstructionStepUiState()) }
 
 private fun String.toTextList(): List<String> =
     split(",")
