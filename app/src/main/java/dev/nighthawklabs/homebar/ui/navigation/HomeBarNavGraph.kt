@@ -82,7 +82,9 @@ fun HomeBarNavGraph() {
                 recipeId = null,
                 onCancel = { navController.popBackStack() },
                 onRecipeSaved = { recipeId ->
-                    navController.navigate(HomeBarRoute.recipeDetail(recipeId))
+                    navController.navigate(HomeBarRoute.recipeDetail(recipeId)) {
+                        popUpTo(HomeBarRoute.NewRecipe) { inclusive = true }
+                    }
                 },
             )
         }
@@ -94,7 +96,9 @@ fun HomeBarNavGraph() {
                 recipeId = checkNotNull(backStackEntry.arguments?.getString("recipeId")),
                 onCancel = { navController.popBackStack() },
                 onRecipeSaved = { recipeId ->
-                    navController.navigate(HomeBarRoute.recipeDetail(recipeId))
+                    navController.navigate(HomeBarRoute.recipeDetail(recipeId)) {
+                        popUpTo(HomeBarRoute.EditRecipe) { inclusive = true }
+                    }
                 },
             )
         }
