@@ -205,9 +205,9 @@ If connected Android tests exist and are relevant, run:
 
 If connected tests do not exist or are not relevant, report that clearly.
 
-## Physical Device Smoke Test
+## Device or Emulator Functional Verification
 
-A physical Android device may be connected:
+A physical Android device is usually available and should be preferred:
 
 ```text
 Device: Pixel 10 Pro
@@ -215,57 +215,86 @@ Developer mode: enabled
 Expected connection: USB debugging through adb
 ```
 
-Use it for a smoke test after each Epic when available.
+After each Epic, verify the implemented behavior on a connected device or emulator. Launching the app is only a startup smoke test. It does not verify the Epic unless the Epic only changed startup behavior.
 
-Start with:
+Use this order:
+
+1. Prefer the connected Pixel when `adb devices` lists it as `device`.
+2. If the Pixel is unavailable, use an Android emulator when one is available.
+3. If neither device nor emulator is available, do not block the whole task. Report the exact command output and state that functional UI verification was not completed.
+
+If multiple adb targets are connected, select one explicitly with `adb -s <serial> ...` and include the selected target in the report.
+
+Before device verification, define a short scenario based on the Epic. The scenario should state:
+
+- Screen or flow tested.
+- Inputs or actions performed.
+- Expected visible result.
+- Expected persisted result, when relevant.
+- Crash or error condition checked through logcat.
+
+Prefer automated Android UI tests when practical. If relevant connected UI tests exist, run them with:
 
 ```bash
-adb devices
-```
-
-If the device is listed as `device`, continue.
-
-Clear logs:
-
-```bash
-adb logcat -c
-```
-
-Install the debug build:
-
-```bash
-./gradlew installDebug
+./gradlew connectedDebugAndroidTest
 ```
 
 On Windows, use:
 
 ```powershell
-.\gradlew.bat installDebug
+.\gradlew.bat connectedDebugAndroidTest
 ```
 
-Launch the app:
+If no relevant connected UI test exists, perform adb-assisted UI verification. Use `adb shell input` commands, UI Automator dumps, screenshots, and logcat to exercise and inspect the changed behavior. Do not stop at launching the app.
+
+Useful commands:
 
 ```bash
+adb devices
+adb logcat -c
+./gradlew installDebug
 adb shell monkey -p dev.nighthawklabs.homebar -c android.intent.category.LAUNCHER 1
-```
-
-Check the app process:
-
-```bash
 adb shell pidof dev.nighthawklabs.homebar
+adb shell input tap <x> <y>
+adb shell input text '<text>'
+adb shell input keyevent KEYCODE_BACK
+adb shell input swipe <x1> <y1> <x2> <y2> <duration_ms>
+adb shell uiautomator dump /sdcard/window.xml
+adb pull /sdcard/window.xml ./window.xml
+adb exec-out screencap -p > screen.png
+adb logcat -d -t 300 | grep -iE "FATAL EXCEPTION|AndroidRuntime|dev.nighthawklabs.homebar"
 ```
 
-Inspect recent logs for crashes:
+On Windows PowerShell, prefer the Gradle wrapper equivalent and use an appropriate screenshot command, for example:
 
-```bash
-adb logcat -d -t 300 | grep -iE "FATAL EXCEPTION|AndroidRuntime|dev.nighthawklabs.homebar"
+```powershell
+.\gradlew.bat installDebug
+adb exec-out screencap -p > screen.png
 ```
 
 If `grep` is unavailable, use an equivalent command or inspect recent logcat output manually.
 
-Do not claim a manual UI behavior was verified unless it was actually checked on the device and through an automated test.
+For Compose screens, use stable text, content descriptions, visible labels, and navigation state where possible. If the Epic adds UI that cannot be reliably verified with adb coordinates, add or update Compose UI tests when practical rather than relying only on manual taps.
 
-If the device is not visible, unauthorized, offline, or unavailable, do not block the whole task. Report the exact command output that prevented device testing.
+Do not claim a behavior was verified solely because:
+
+- The app launched.
+- The process exists.
+- A screen was opened but the changed behavior was not exercised.
+- A screenshot was taken without checking the expected result.
+
+A valid functional verification report should describe the actual path tested, such as:
+
+```text
+Pixel functional verification: passed.
+- Installed debug build on Pixel 10 Pro.
+- Opened Home Bar.
+- Changed recipe filter to Makeable now.
+- Confirmed UI Automator dump showed the expected filter label.
+- Checked recent logcat output for crashes.
+```
+
+If functional verification cannot be completed, report why and include the blocking command output.
 
 ## Epic Completion Report
 
@@ -318,7 +347,7 @@ For normal Epic implementation, the report must include:
 - Implemented changes
 - Simplification pass result
 - Checks run
-- Pixel smoke test result
+- Device or emulator functional verification result
 - Manual Android Studio steps
 - Assumptions
 - Follow-up items
@@ -340,6 +369,6 @@ Before finishing a Home Bar task, check:
 - Derived recipe match data is recalculated instead of saved as stale state.
 - Unit tests cover domain logic where practical.
 - The app still builds.
-- The connected Pixel smoke test was attempted when available.
+- Device or emulator functional UI verification was attempted and reported clearly.
 - The completion report is based on the current diff.
 - File lists use file names only, not absolute paths.

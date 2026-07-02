@@ -40,14 +40,14 @@ Include:
 6. Files likely to change.
 7. Nearby areas you plan to leave alone.
 8. Risks, ambiguities, or assumptions.
-9. Tests and Pixel smoke test you will run.
+9. Tests and device or emulator functional UI verification you will run.
 
 ## Implementation Rules
 
 Follow:
 
 - `AGENTS.md` for agent behavior, planning, implementation discipline, simplification, and verification.
-- `docs/agent/homebar-project-guidance.md` for Home Bar product scope, stack choices, data ownership, Android checks, and Pixel smoke-test steps.
+- `docs/agent/homebar-project-guidance.md` for Home Bar product scope, stack choices, data ownership, Android checks, and device or emulator functional UI verification.
 
 Implement only the selected Epic. Do not continue to the next Epic.
 
@@ -63,11 +63,13 @@ After implementation, run the relevant checks from `AGENTS.md` and `docs/agent/h
 - Debug build
 - `git diff --check`
 - Connected Android tests, only if relevant connected tests exist
-- Pixel physical-device smoke test, when adb can see the connected device
+- Device or emulator functional UI verification for the implemented Epic
 
 On Windows, use `./gradlew` equivalents from the Home Bar guidance file.
 
-Do not claim a manual UI behavior was verified unless it was actually checked on the device or through an automated test.
+Do not treat launching the app as sufficient verification unless the Epic only changed startup behavior. Exercise the implemented behavior through one concrete path on the connected Pixel or an emulator. Use connected UI tests when available. Otherwise use adb-assisted verification with `adb shell input`, UI Automator dumps, screenshots, and logcat as described in `docs/agent/homebar-project-guidance.md`.
+
+Do not claim a manual UI behavior was verified unless the changed behavior was actually exercised on a device/emulator or through an automated UI test.
 
 ## Completion Report
 
@@ -83,7 +85,7 @@ The report must include:
 - Implemented changes
 - Simplification pass result
 - Checks run
-- Pixel smoke test result
+- Device or emulator functional verification result
 - Manual Android Studio steps
 - Assumptions
 - Follow-up items
