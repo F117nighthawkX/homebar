@@ -91,6 +91,58 @@ class RecipeListItemTest {
         )
     }
 
+    @Test
+    fun `custom recipe cards use current inventory matching`() {
+        val items = createRecipeListItems(
+            recipes = listOf(
+                customRecipe("house-margarita", isFavorite = true, "tequila", "lime-juice"),
+            ),
+            ingredients = listOf(
+                ingredient("tequila", "Tequila", inStock = true),
+                ingredient("lime-juice", "Lime juice", inStock = false),
+            ),
+            substitutionGroups = emptyList(),
+        )
+
+        assertEquals(
+            RecipeListItem(
+                id = "house-margarita",
+                name = "House Margarita",
+                isFavorite = true,
+                ingredientSummary = "Tequila, Lime juice",
+                makeabilityLabel = "Missing 1",
+                missingIngredientNames = listOf("Lime juice"),
+                runningLowIngredientNames = emptyList(),
+            ),
+            items.single(),
+        )
+    }
+
+    @Test
+    fun `custom recipe cards refresh when inventory changes`() {
+        val customRecipe = customRecipe("house-margarita", false, "tequila", "lime-juice")
+
+        val before = createRecipeListItems(
+            recipes = listOf(customRecipe),
+            ingredients = listOf(
+                ingredient("tequila", "Tequila", inStock = true),
+                ingredient("lime-juice", "Lime juice", inStock = false),
+            ),
+            substitutionGroups = emptyList(),
+        )
+        val after = createRecipeListItems(
+            recipes = listOf(customRecipe),
+            ingredients = listOf(
+                ingredient("tequila", "Tequila", inStock = true),
+                ingredient("lime-juice", "Lime juice", inStock = true),
+            ),
+            substitutionGroups = emptyList(),
+        )
+
+        assertEquals("Missing 1", before.single().makeabilityLabel)
+        assertEquals("Makeable", after.single().makeabilityLabel)
+    }
+
     private fun recipe(
         id: String,
         isFavorite: Boolean = false,
@@ -110,6 +162,16 @@ class RecipeListItemTest {
         isFavorite = isFavorite,
         isCustom = false,
     )
+
+    private fun customRecipe(
+        id: String,
+        isFavorite: Boolean = false,
+        vararg ingredientIds: String,
+    ) = recipe(
+        id = id,
+        isFavorite = isFavorite,
+        ingredientIds = ingredientIds,
+    ).copy(isCustom = true)
 
     private fun ingredient(
         id: String,

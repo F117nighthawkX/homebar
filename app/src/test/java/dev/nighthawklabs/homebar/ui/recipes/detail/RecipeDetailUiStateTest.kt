@@ -77,6 +77,26 @@ class RecipeDetailUiStateTest {
         assertEquals(true, state.canDelete)
     }
 
+    @Test
+    fun `custom recipe detail uses matching and serving scaling`() {
+        val state = createRecipeDetailUiState(
+            servingState = RecipeServingState(cubaLibre().copy(isCustom = true, isFavorite = true))
+                .increaseServings(),
+            ingredients = listOf(
+                ingredient("rum", "Rum", inStock = true),
+                ingredient("coke", "Coke", inStock = true),
+            ),
+            substitutionGroups = emptyList(),
+        )
+
+        assertEquals(RecipeMatchStatus.MAKEABLE, state.matchStatus)
+        assertEquals(2, state.selectedServingCount)
+        assertEquals(true, state.recipe?.isCustom)
+        assertEquals(true, state.recipe?.isFavorite)
+        assertEquals(4.0, state.ingredientLines[0].quantity, 0.0)
+        assertEquals(8.0, state.ingredientLines[1].quantity, 0.0)
+    }
+
     private fun cubaLibre() = Recipe(
         id = "cuba-libre",
         name = "Cuba Libre",

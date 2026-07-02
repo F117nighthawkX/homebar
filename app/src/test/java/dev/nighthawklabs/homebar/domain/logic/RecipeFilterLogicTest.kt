@@ -228,6 +228,69 @@ class RecipeFilterLogicTest {
         assertEquals(listOf("cuba-libre"), result.map { it.recipe.id })
     }
 
+    @Test
+    fun `custom recipes participate in list filters like classic recipes`() {
+        val customMargarita = matchedRecipe(
+            id = "house-margarita",
+            name = "House Margarita",
+            ingredientIds = listOf("tequila", "lime-juice"),
+            status = RecipeMatchStatus.MAKEABLE,
+            isFavorite = true,
+            tags = listOf("Custom"),
+            isCustom = true,
+        )
+        val classicMartini = matchedRecipe(
+            id = "martini",
+            name = "Martini",
+            ingredientIds = listOf("gin"),
+            status = RecipeMatchStatus.MISSING_INGREDIENTS,
+            missingIngredients = listOf("gin"),
+        )
+        val recipes = listOf(customMargarita, classicMartini)
+        val ingredients = listOf(
+            ingredient("tequila", "Tequila"),
+            ingredient("lime-juice", "Lime juice"),
+            ingredient("gin", "Gin"),
+        )
+
+        assertEquals(
+            listOf("house-margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(searchText = "house"),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+        assertEquals(
+            listOf("house-margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(favoriteOnly = true),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+        assertEquals(
+            listOf("house-margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(ingredientFilter = "tequila"),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+        assertEquals(
+            listOf("house-margarita"),
+            filterRecipes(
+                recipes = recipes,
+                filterState = RecipeListFilterState(),
+                substitutionGroups = emptyList(),
+                ingredients = ingredients,
+            ).map { it.recipe.id },
+        )
+    }
+
     private fun matchedRecipe(
         id: String,
         name: String,
@@ -236,6 +299,7 @@ class RecipeFilterLogicTest {
         missingIngredients: List<String> = emptyList(),
         isFavorite: Boolean = false,
         tags: List<String> = emptyList(),
+        isCustom: Boolean = false,
     ) = RecipeWithMatchResult(
         recipe = Recipe(
             id = id,
@@ -250,7 +314,7 @@ class RecipeFilterLogicTest {
             garnish = emptyList(),
             tags = tags,
             isFavorite = isFavorite,
-            isCustom = false,
+            isCustom = isCustom,
         ),
         matchResult = RecipeMatchResult(
             status = status,
