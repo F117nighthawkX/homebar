@@ -79,6 +79,45 @@ class RecipeEditorStateTest {
     }
 
     @Test
+    fun `unchanged editor state has no unsaved changes`() {
+        val initialState = validEditorState()
+
+        val state = initialState.withIngredientOptionsAndSaveAvailability(
+            ingredients = listOf(tequila()),
+            initialSnapshot = initialState.toContentSnapshot(),
+        )
+
+        assertFalse(state.hasUnsavedChanges)
+    }
+
+    @Test
+    fun `changed editor state has unsaved changes`() {
+        val initialState = validEditorState()
+        val changedState = initialState.copy(name = "Spicy Margarita")
+
+        val state = changedState.withIngredientOptionsAndSaveAvailability(
+            ingredients = listOf(tequila()),
+            initialSnapshot = initialState.toContentSnapshot(),
+        )
+
+        assertTrue(state.hasUnsavedChanges)
+    }
+
+    @Test
+    fun `reverted editor state has no unsaved changes`() {
+        val initialState = validEditorState()
+        val changedState = initialState.copy(name = "Spicy Margarita")
+        val revertedState = changedState.copy(name = initialState.name)
+
+        val state = revertedState.withIngredientOptionsAndSaveAvailability(
+            ingredients = listOf(tequila()),
+            initialSnapshot = initialState.toContentSnapshot(),
+        )
+
+        assertFalse(state.hasUnsavedChanges)
+    }
+
+    @Test
     fun `editor state preserves custom metadata while updating recipe fields`() {
         val existingRecipe = customRecipe()
         val state = createRecipeEditorUiState(existingRecipe, listOf(tequila())).copy(

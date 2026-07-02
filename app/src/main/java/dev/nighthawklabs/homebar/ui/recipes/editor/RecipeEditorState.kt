@@ -26,6 +26,7 @@ data class RecipeEditorUiState(
     val canSave: Boolean = false,
     val ingredientOptions: List<RecipeEditorIngredientOption> = emptyList(),
     val validation: RecipeEditorValidation = RecipeEditorValidation(),
+    val hasUnsavedChanges: Boolean = false,
 )
 
 data class RecipeEditorIngredientOption(
@@ -58,6 +59,19 @@ data class RecipeEditorIngredientLineValidation(
     val hasErrors: Boolean
         get() = ingredientError != null || unitError != null || quantityError != null
 }
+
+data class RecipeEditorContentSnapshot(
+    val recipeId: String?,
+    val name: String,
+    val baseServingCount: String,
+    val ingredientLines: List<RecipeEditorIngredientLineUiState>,
+    val instructionSteps: List<RecipeEditorInstructionStepUiState>,
+    val glassware: String,
+    val tools: String,
+    val garnish: String,
+    val tags: String,
+    val isFavorite: Boolean,
+)
 
 data class RecipeEditorIngredientLineUiState(
     val ingredientId: String? = null,
@@ -118,6 +132,7 @@ fun createRecipeEditorUiState(
 
 fun RecipeEditorUiState.withIngredientOptionsAndSaveAvailability(
     ingredients: List<Ingredient>,
+    initialSnapshot: RecipeEditorContentSnapshot? = null,
 ): RecipeEditorUiState {
     val validation = validateRecipeEditorState(ingredients)
     return copy(
@@ -129,6 +144,9 @@ fun RecipeEditorUiState.withIngredientOptionsAndSaveAvailability(
             )
         },
         validation = validation,
+        hasUnsavedChanges = initialSnapshot?.let { snapshot ->
+            toContentSnapshot() != snapshot
+        } ?: false,
     )
 }
 
@@ -202,6 +220,19 @@ fun RecipeEditorUiState.validateRecipeEditorState(
         ingredientLineErrors = ingredientLineErrors,
     )
 }
+
+fun RecipeEditorUiState.toContentSnapshot(): RecipeEditorContentSnapshot = RecipeEditorContentSnapshot(
+    recipeId = recipeId,
+    name = name,
+    baseServingCount = baseServingCount,
+    ingredientLines = ingredientLines,
+    instructionSteps = instructionSteps,
+    glassware = glassware,
+    tools = tools,
+    garnish = garnish,
+    tags = tags,
+    isFavorite = isFavorite,
+)
 
 fun RecipeEditorUiState.toCustomRecipe(
     existingRecipe: Recipe?,

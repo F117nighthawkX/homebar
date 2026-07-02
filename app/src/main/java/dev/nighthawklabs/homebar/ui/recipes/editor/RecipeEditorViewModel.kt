@@ -29,6 +29,7 @@ class RecipeEditorViewModel(
     )
 
     private val loadedRecipe = MutableStateFlow<Recipe?>(null)
+    private val initialEditorSnapshot = MutableStateFlow<RecipeEditorContentSnapshot?>(null)
     private val editorState = MutableStateFlow(RecipeEditorUiState(isLoading = true))
     private val ingredients = ingredientRepository.observeIngredients().stateIn(
         scope = viewModelScope,
@@ -39,11 +40,15 @@ class RecipeEditorViewModel(
     val uiState: StateFlow<RecipeEditorUiState> = combine(
         editorState,
         ingredients,
-    ) { state, currentIngredients ->
+        initialEditorSnapshot,
+    ) { state, currentIngredients, currentInitialSnapshot ->
         if (state.isLoading || state.isNotFound) {
             state
         } else {
-            state.withIngredientOptionsAndSaveAvailability(currentIngredients)
+            state.withIngredientOptionsAndSaveAvailability(
+                ingredients = currentIngredients,
+                initialSnapshot = currentInitialSnapshot,
+            )
         }
     }.stateIn(
         scope = viewModelScope,
@@ -55,19 +60,24 @@ class RecipeEditorViewModel(
         viewModelScope.launch {
             if (recipeId == null) {
                 loadedRecipe.value = null
-                editorState.value = createRecipeEditorUiState(recipe = null, ingredients = ingredients.value)
+                val state = createRecipeEditorUiState(recipe = null, ingredients = ingredients.value)
+                editorState.value = state
+                initialEditorSnapshot.value = state.toContentSnapshot()
                 return@launch
             }
 
             val recipe = recipeRepository.getRecipe(recipeId)
             if (recipe?.isCustom != true) {
                 loadedRecipe.value = null
+                initialEditorSnapshot.value = null
                 editorState.value = RecipeEditorUiState(isNotFound = true)
                 return@launch
             }
 
             loadedRecipe.value = recipe
-            editorState.value = createRecipeEditorUiState(recipe = recipe, ingredients = ingredients.value)
+            val state = createRecipeEditorUiState(recipe = recipe, ingredients = ingredients.value)
+            editorState.value = state
+            initialEditorSnapshot.value = state.toContentSnapshot()
         }
     }
 
@@ -160,11 +170,15 @@ class RecipeEditorViewModel(
             if (existingRecipe == null) {
                 recipeRepository.insertCustomRecipe(recipe)
                 loadedRecipe.value = recipe
-                editorState.value = createRecipeEditorUiState(recipe, ingredients.value)
+                val state = createRecipeEditorUiState(recipe, ingredients.value)
+                editorState.value = state
+                initialEditorSnapshot.value = state.toContentSnapshot()
                 onRecipeSaved(recipe.id)
             } else if (recipeRepository.updateCustomRecipe(recipe)) {
                 loadedRecipe.value = recipe
-                editorState.value = createRecipeEditorUiState(recipe, ingredients.value)
+                val state = createRecipeEditorUiState(recipe, ingredients.value)
+                editorState.value = state
+                initialEditorSnapshot.value = state.toContentSnapshot()
                 onRecipeSaved(recipe.id)
             }
         }

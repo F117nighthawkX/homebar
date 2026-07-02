@@ -1,5 +1,6 @@
 package dev.nighthawklabs.homebar.ui.recipes.editor
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,12 +48,47 @@ fun RecipeEditorScreen(
     LaunchedEffect(recipeId) { viewModel.load(recipeId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val title = if (recipeId == null) "New recipe" else "Edit recipe"
+    var showDiscardConfirmation by remember { mutableStateOf(false) }
+    val requestExit = {
+        if (uiState.hasUnsavedChanges) {
+            showDiscardConfirmation = true
+        } else {
+            onCancel()
+        }
+    }
+
+    BackHandler(enabled = !uiState.isLoading && !uiState.isNotFound) {
+        requestExit()
+    }
+
+    if (showDiscardConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirmation = false },
+            title = { Text("Discard changes?") },
+            text = { Text("This leaves the recipe editor without saving changes.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDiscardConfirmation = false
+                        onCancel()
+                    },
+                ) {
+                    Text("Discard changes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirmation = false }) {
+                    Text("Keep editing")
+                }
+            },
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(title) },
-                navigationIcon = { TextButton(onClick = onCancel) { Text("Cancel") } },
+                navigationIcon = { TextButton(onClick = requestExit) { Text("Cancel") } },
                 actions = {
                     TextButton(
                         enabled = uiState.canSave,
